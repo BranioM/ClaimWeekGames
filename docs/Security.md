@@ -16,6 +16,8 @@ Implemented safeguards:
 - Epic free-game fetch has an explicit timeout.
 - Epic promotion JSON is parsed defensively.
 - Claiming is user-assisted through Epic checkout links, not automated purchase.
+- Epic ownership sync is metadata-only and does not fetch private Epic library data.
+- Ownership sync does not delete missing ownerships automatically.
 
 ## Secrets Policy
 
@@ -66,6 +68,7 @@ Before adding public account or sync endpoints:
 
 - Authentication/session design.
 - Authorization guards.
+- Authenticated Epic library retrieval design.
 - Request validation layer.
 - Rate limiting.
 - Secret encryption design for any future token persistence.

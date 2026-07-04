@@ -37,6 +37,7 @@ flowchart TB
     EpicClient["EpicGamesClientService\nfetch + normalize promotions"]
     EpicCheckout["EpicGamesCheckoutService\nuser-assisted checkout URL"]
     EpicSync["EpicGamesSyncService\nupsert games, IDs, offers"]
+    EpicOwnershipSync["EpicOwnershipSyncService\nmetadata-only owned games sync"]
   end
 
   subgraph Stores["External Store Integrations"]
@@ -64,8 +65,10 @@ flowchart TB
   EpicGamesModule --> EpicClient
   EpicGamesModule --> EpicCheckout
   EpicGamesModule --> EpicSync
+  EpicGamesModule --> EpicOwnershipSync
   EpicSync --> EpicClient
   EpicSync --> EpicCheckout
+  EpicOwnershipSync --> PrismaService
   EpicClient --> EpicStore
   EpicSync --> PrismaService
   PrismaService --> Postgres
@@ -103,6 +106,8 @@ Store synchronization should follow a consistent pipeline:
 Epic Games is the first implementation target. Its service foundation currently ensures the Epic Games Store platform exists and provides a place to add weekly offer, historical offer, owned game, multi-account, and duplicate-detection workflows.
 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
+
+Epic ownership synchronization currently accepts normalized ownership metadata and persists it for an active Epic `ConnectedAccount`. It does not fetch private Epic library data or store credentials; authenticated library retrieval remains blocked on a reviewed auth/session design.
 
 ## Future Integrations
 

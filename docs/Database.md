@@ -105,6 +105,11 @@ Constraints:
 
 Represents a game owned by a connected account.
 
+Current sync behavior:
+
+- ownership rows are upserted by `(connectedAccountId, gameId)`.
+- missing games from a sync payload are not deleted automatically.
+
 Constraints:
 
 - unique `(connectedAccountId, gameId)`

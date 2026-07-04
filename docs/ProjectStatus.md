@@ -17,6 +17,7 @@
 - Prisma migrations are applied locally.
 - Epic free-game offers can be fetched, normalized, and persisted by service code.
 - Epic account connection state can be generated and consumed without storing raw state, passwords, or tokens.
+- Epic owned-game metadata can be persisted for an active connected account.
 - User-assisted Epic checkout URLs can be generated from free offers.
 - GitHub Actions CI validates pull requests.
 
@@ -37,9 +38,9 @@ Last verified commands:
 
 ## Open Work
 
-- Epic ownership sync service.
 - Scheduler module.
 - Authentication and user session design.
 - Public API controllers for account connection and offers.
+- Authenticated Epic library retrieval.
 - Web UI.
 - Notification event pipeline.

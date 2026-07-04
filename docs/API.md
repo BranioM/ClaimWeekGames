@@ -48,6 +48,29 @@ Persists Epic free offers into:
 - `ExternalGameId`
 - `FreeGameOffer`
 
+### `EpicOwnershipSyncService`
+
+Persists normalized Epic ownership metadata for an active Epic connected account.
+
+Inputs:
+
+- `connectedAccountId`
+- normalized owned games with provider game ID, title, optional slug, optional developer/publisher, and optional acquired date
+
+Writes:
+
+- `Game`
+- `ExternalGameId`
+- `Ownership`
+- `ConnectedAccount.lastSyncedAt`
+
+Security constraints:
+
+- Does not fetch private Epic library data.
+- Does not store passwords, tokens, or cookies.
+- Requires an active Epic `ConnectedAccount`.
+- Does not remove ownership records that are absent from a sync payload.
+
 ### `EpicGamesCheckoutService`
 
 Generates user-assisted Epic checkout URLs from normalized free offers.
@@ -69,3 +92,4 @@ Security constraints:
 - `POST /api/epic/accounts/connect`
 - `GET /api/free-offers`
 - `POST /api/sync/epic/free-offers` for internal/admin use only
+- `POST /api/sync/epic/ownerships` for internal/admin use only

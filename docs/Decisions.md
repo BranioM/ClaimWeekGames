@@ -29,3 +29,9 @@ Reason: password storage would introduce unnecessary security risk. Any future a
 Decision: generate Epic checkout links instead of implementing automated purchasing.
 
 Reason: it avoids credential custody and reduces automation risk while still helping users claim free games.
+
+## 2026-07-04: Implement Ownership Sync as Metadata Persistence First
+
+Decision: add Epic ownership sync as an internal service that accepts normalized owned-game metadata and persists `Game`, `ExternalGameId`, and `Ownership` records.
+
+Reason: this validates the data model and sync behavior without introducing private library fetching, token storage, or credential custody before the auth/session design is complete.

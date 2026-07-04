@@ -16,6 +16,8 @@
 - `/api/health` returns API and database health.
 - Prisma migrations are applied locally.
 - Epic weekly free-game offers can be fetched, normalized, persisted, and tracked with `SyncJob`.
+- Epic sync records creation/update counters in `SyncJob.metadata`.
+- Internal recent sync-job reads are available at `GET /api/internal/sync-jobs`.
 - Epic account connection state can be generated and consumed without storing raw state, passwords, or tokens.
 - Epic owned-game metadata can be persisted for an active connected account.
 - User-assisted Epic checkout URLs can be generated from free offers.
@@ -47,6 +49,7 @@ Last verified commands:
 - `curl http://localhost:3002/api/free-offers`
 - unauthenticated `POST /api/internal/epic/sync/free-offers` returns `401`
 - authenticated e2e `POST /api/internal/epic/sync/free-offers` creates a successful sync response
+- e2e `GET /api/internal/sync-jobs` requires the internal API key
 - unauthenticated `GET /api/me` returns `401`
 - authenticated internal session bootstrap with invalid body reaches validation and returns `400`
 
@@ -54,6 +57,7 @@ Last verified commands:
 
 - Scheduler module.
 - Services that create and execute `SyncJob` records.
+- Real scheduler trigger for `SyncJob` execution.
 - Public signup/login or external identity-provider callback.
 - Session revocation endpoint.
 - Public user-authenticated account connection endpoints using `AuthenticatedUserGuard`.

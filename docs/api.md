@@ -107,9 +107,57 @@ Example response:
   "storeId": "store-id",
   "offersSeen": 2,
   "offersSynced": 2,
+  "gamesCreated": 2,
+  "externalIdsCreated": 2,
+  "offersCreated": 1,
+  "offersUpdated": 1,
   "checkoutUrl": "https://www.epicgames.com/store/purchase?offers=...",
   "syncedAt": "2026-07-04T00:00:00.000Z"
 }
+```
+
+SyncJob metadata includes:
+
+- `offersSeen`
+- `offersSynced`
+- `gamesCreated`
+- `externalIdsCreated`
+- `offersCreated`
+- `offersUpdated`
+- `checkoutUrl`
+
+### `GET /api/internal/sync-jobs`
+
+Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
+
+Returns recent synchronization jobs for operational visibility.
+
+Example response:
+
+```json
+[
+  {
+    "id": "sync-job-id",
+    "jobType": "EPIC_WEEKLY_FREE_OFFERS",
+    "status": "SUCCEEDED",
+    "startedAt": "2026-07-04T00:00:00.000Z",
+    "finishedAt": "2026-07-04T00:01:00.000Z",
+    "metadata": {
+      "offersSeen": 2,
+      "offersSynced": 2,
+      "gamesCreated": 2,
+      "externalIdsCreated": 2,
+      "offersCreated": 1,
+      "offersUpdated": 1
+    },
+    "createdAt": "2026-07-04T00:00:00.000Z",
+    "updatedAt": "2026-07-04T00:01:00.000Z",
+    "store": {
+      "id": "store-id",
+      "name": "Epic Games Store"
+    }
+  }
+]
 ```
 
 ### `POST /api/internal/epic/accounts/connection-state`
@@ -212,9 +260,18 @@ Persists Epic free offers into:
 Sync behavior:
 
 - creates a `RUNNING` `SyncJob` before fetching Epic data.
-- updates the job to `SUCCEEDED` with offer counts on success.
+- updates the job to `SUCCEEDED` with offer and creation/update counts on success.
 - updates the job to `FAILED` with `error` on failure.
 - uses upserts so repeated weekly sync runs are idempotent for the same offer window.
+
+### `SyncJobsService`
+
+Returns recent `SyncJob` records for internal operational visibility.
+
+Security constraints:
+
+- only exposed through `InternalApiKeyGuard`.
+- returns status and metadata, not secrets.
 
 ### `EpicOwnershipSyncService`
 

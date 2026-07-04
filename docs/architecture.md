@@ -134,7 +134,7 @@ Store synchronization should follow a consistent pipeline:
 8. Mark the `SyncJob` as `SUCCEEDED` or `FAILED`.
 9. Emit domain events for notifications and downstream processing.
 
-Epic Games is the first implementation target. Its weekly free-offer sync currently ensures the Epic Games Store exists, records a `SyncJob`, fetches current/upcoming promotions, normalizes games, and upserts external IDs and free-offer windows.
+Epic Games is the first implementation target. Its weekly free-offer sync currently ensures the Epic Games Store exists, records a `SyncJob`, fetches current/upcoming promotions, normalizes games, upserts external IDs and free-offer windows, and stores creation/update counters in job metadata.
 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 

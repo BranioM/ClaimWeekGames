@@ -14,6 +14,10 @@ export type EpicGamesSyncResult = {
   storeId: string;
   offersSeen: number;
   offersSynced: number;
+  gamesCreated: number;
+  externalIdsCreated: number;
+  offersCreated: number;
+  offersUpdated: number;
   checkoutUrl?: string;
   syncedAt: string;
 };

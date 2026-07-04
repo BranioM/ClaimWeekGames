@@ -33,11 +33,21 @@ export class EpicGamesSyncService {
 
     try {
       const offers = await this.epicGamesClient.getFreeGameOffers();
-      let offersSynced = 0;
+      const counters = {
+        offersSynced: 0,
+        gamesCreated: 0,
+        externalIdsCreated: 0,
+        offersCreated: 0,
+        offersUpdated: 0,
+      };
 
       for (const offer of offers) {
-        await this.upsertOffer(store.id, offer);
-        offersSynced += 1;
+        const result = await this.upsertOffer(store.id, offer);
+        counters.offersSynced += 1;
+        counters.gamesCreated += result.gameCreated ? 1 : 0;
+        counters.externalIdsCreated += result.externalIdCreated ? 1 : 0;
+        counters.offersCreated += result.offerCreated ? 1 : 0;
+        counters.offersUpdated += result.offerUpdated ? 1 : 0;
       }
 
       const checkoutUrl = this.epicGamesCheckout.generateCheckoutUrl(offers);
@@ -50,19 +60,29 @@ export class EpicGamesSyncService {
           finishedAt: syncedAt,
           metadata: {
             offersSeen: offers.length,
-            offersSynced,
+            offersSynced: counters.offersSynced,
+            gamesCreated: counters.gamesCreated,
+            externalIdsCreated: counters.externalIdsCreated,
+            offersCreated: counters.offersCreated,
+            offersUpdated: counters.offersUpdated,
             checkoutUrl,
           },
         },
       });
 
-      this.logger.log(`Synced ${offersSynced} Epic Games free-game offers`);
+      this.logger.log(
+        `Synced ${counters.offersSynced} Epic Games free-game offers`,
+      );
 
       return {
         syncJobId: syncJob.id,
         storeId: store.id,
         offersSeen: offers.length,
-        offersSynced,
+        offersSynced: counters.offersSynced,
+        gamesCreated: counters.gamesCreated,
+        externalIdsCreated: counters.externalIdsCreated,
+        offersCreated: counters.offersCreated,
+        offersUpdated: counters.offersUpdated,
         checkoutUrl,
         syncedAt: syncedAt.toISOString(),
       };
@@ -81,6 +101,10 @@ export class EpicGamesSyncService {
   }
 
   private async upsertOffer(storeId: string, offer: EpicGamesOffer) {
+    const existingGame = await this.prisma.game.findUnique({
+      where: { slug: offer.slug },
+      select: { id: true },
+    });
     const game = await this.prisma.game.upsert({
       where: { slug: offer.slug },
       create: {
@@ -96,6 +120,15 @@ export class EpicGamesSyncService {
       },
     });
 
+    const existingExternalId = await this.prisma.externalGameId.findUnique({
+      where: {
+        storeId_providerGameId: {
+          storeId,
+          providerGameId: offer.providerGameId,
+        },
+      },
+      select: { id: true },
+    });
     await this.prisma.externalGameId.upsert({
       where: {
         storeId_providerGameId: {
@@ -119,6 +152,15 @@ export class EpicGamesSyncService {
       offer.endDate.toISOString(),
     ].join(':');
 
+    const existingOffer = await this.prisma.freeGameOffer.findUnique({
+      where: {
+        storeId_externalOfferId: {
+          storeId,
+          externalOfferId,
+        },
+      },
+      select: { id: true },
+    });
     await this.prisma.freeGameOffer.upsert({
       where: {
         storeId_externalOfferId: {
@@ -139,6 +181,13 @@ export class EpicGamesSyncService {
         endDate: offer.endDate,
       },
     });
+
+    return {
+      gameCreated: !existingGame,
+      externalIdCreated: !existingExternalId,
+      offerCreated: !existingOffer,
+      offerUpdated: Boolean(existingOffer),
+    };
   }
 }
 

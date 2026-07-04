@@ -12,12 +12,15 @@ describe('EpicGamesSyncService', () => {
         upsert: jest.fn().mockResolvedValue({ id: 'store-1' }),
       },
       game: {
+        findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockResolvedValue({ id: 'game-1' }),
       },
       externalGameId: {
+        findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockResolvedValue({ id: 'external-game-1' }),
       },
       freeGameOffer: {
+        findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockResolvedValue({ id: 'offer-1' }),
       },
       syncJob: {
@@ -59,6 +62,10 @@ describe('EpicGamesSyncService', () => {
       storeId: 'store-1',
       offersSeen: 1,
       offersSynced: 1,
+      gamesCreated: 1,
+      externalIdsCreated: 1,
+      offersCreated: 1,
+      offersUpdated: 0,
       checkoutUrl: 'https://example.com',
     });
     expect(prisma.syncJob.create).toHaveBeenCalledWith({
@@ -78,6 +85,10 @@ describe('EpicGamesSyncService', () => {
         metadata: {
           offersSeen: 1,
           offersSynced: 1,
+          gamesCreated: 1,
+          externalIdsCreated: 1,
+          offersCreated: 1,
+          offersUpdated: 0,
           checkoutUrl: 'https://example.com',
         },
       },
@@ -101,6 +112,78 @@ describe('EpicGamesSyncService', () => {
               'epic-game-1:2026-07-01T00:00:00.000Z:2026-07-08T00:00:00.000Z',
           },
         },
+      }),
+    );
+  });
+
+  it('counts duplicate offer sync as idempotent updates', async () => {
+    const prisma = {
+      store: {
+        upsert: jest.fn().mockResolvedValue({ id: 'store-1' }),
+      },
+      game: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'game-1' }),
+        upsert: jest.fn().mockResolvedValue({ id: 'game-1' }),
+      },
+      externalGameId: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'external-game-1' }),
+        upsert: jest.fn().mockResolvedValue({ id: 'external-game-1' }),
+      },
+      freeGameOffer: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'offer-1' }),
+        upsert: jest.fn().mockResolvedValue({ id: 'offer-1' }),
+      },
+      syncJob: {
+        create: jest.fn().mockResolvedValue({ id: 'sync-job-1' }),
+        update: jest.fn().mockResolvedValue({ id: 'sync-job-1' }),
+      },
+    };
+    const offers = [
+      {
+        providerGameId: 'epic-game-1',
+        providerNamespace: 'namespace-1',
+        title: 'Example Game',
+        slug: 'example-game',
+        developer: 'Example Dev',
+        publisher: 'Example Publisher',
+        startDate: new Date('2026-07-01T00:00:00.000Z'),
+        endDate: new Date('2026-07-08T00:00:00.000Z'),
+      },
+    ];
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        EpicGamesSyncService,
+        { provide: PrismaService, useValue: prisma },
+        {
+          provide: EpicGamesClientService,
+          useValue: { getFreeGameOffers: jest.fn().mockResolvedValue(offers) },
+        },
+        {
+          provide: EpicGamesCheckoutService,
+          useValue: { generateCheckoutUrl: jest.fn() },
+        },
+      ],
+    }).compile();
+
+    const service = module.get(EpicGamesSyncService);
+
+    await expect(service.syncFreeGames()).resolves.toMatchObject({
+      gamesCreated: 0,
+      externalIdsCreated: 0,
+      offersCreated: 0,
+      offersUpdated: 1,
+    });
+    expect(prisma.syncJob.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'SUCCEEDED',
+          metadata: expect.objectContaining({
+            gamesCreated: 0,
+            externalIdsCreated: 0,
+            offersCreated: 0,
+            offersUpdated: 1,
+          }) as unknown,
+        }) as unknown,
       }),
     );
   });

@@ -77,6 +77,7 @@ Current internal endpoint boundary:
 - `POST /api/internal/epic/sync/ownerships`
 - `POST /api/internal/epic/accounts/connection-state`
 - `POST /api/internal/epic/accounts/connect`
+- `GET /api/internal/sync-jobs`
 
 These endpoints are guarded by `InternalApiKeyGuard` and are not a replacement for user authentication.
 

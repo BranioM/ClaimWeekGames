@@ -7,6 +7,7 @@ import { EpicGamesModule } from './epic-games/epic-games.module.js';
 import { FreeOffersModule } from './free-offers/free-offers.module.js';
 import { HealthModule } from './health/health.module.js';
 import { SecurityModule } from './security/security.module.js';
+import { SyncJobsModule } from './sync-jobs/sync-jobs.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SecurityModule } from './security/security.module.js';
     AuthModule,
     HealthModule,
     FreeOffersModule,
+    SyncJobsModule,
     EpicAccountsModule,
     EpicGamesModule,
   ],

@@ -23,6 +23,7 @@ describe('AppController (e2e)', () => {
         $disconnect: jest.fn(),
         $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
         freeGameOffer: {
+          findUnique: jest.fn().mockResolvedValue(null),
           upsert: jest.fn().mockResolvedValue({ id: 'offer-1' }),
           findMany: jest.fn().mockResolvedValue([
             {
@@ -51,11 +52,31 @@ describe('AppController (e2e)', () => {
         syncJob: {
           create: jest.fn().mockResolvedValue({ id: 'sync-job-1' }),
           update: jest.fn().mockResolvedValue({ id: 'sync-job-1' }),
+          findMany: jest.fn().mockResolvedValue([
+            {
+              id: 'sync-job-1',
+              jobType: 'EPIC_WEEKLY_FREE_OFFERS',
+              status: 'SUCCEEDED',
+              startedAt: new Date('2026-07-04T00:00:00.000Z'),
+              finishedAt: new Date('2026-07-04T00:01:00.000Z'),
+              error: null,
+              metadata: { offersSynced: 1 },
+              createdAt: new Date('2026-07-04T00:00:00.000Z'),
+              updatedAt: new Date('2026-07-04T00:01:00.000Z'),
+              store: {
+                id: 'store-1',
+                name: 'Epic Games Store',
+              },
+              connectedAccount: null,
+            },
+          ]),
         },
         game: {
+          findUnique: jest.fn().mockResolvedValue(null),
           upsert: jest.fn().mockResolvedValue({ id: 'game-1' }),
         },
         externalGameId: {
+          findUnique: jest.fn().mockResolvedValue(null),
           upsert: jest.fn().mockResolvedValue({ id: 'external-game-1' }),
         },
         user: {
@@ -227,6 +248,15 @@ describe('AppController (e2e)', () => {
       .expect(401);
   });
 
+  it('/api/internal/epic/sync/free-offers (POST) rejects invalid internal API key', () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    return request(server)
+      .post('/api/internal/epic/sync/free-offers')
+      .set('x-api-key', 'wrong-key')
+      .expect(401);
+  });
+
   it('/api/internal/epic/sync/free-offers (POST) syncs with internal API key', () => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];
 
@@ -249,9 +279,46 @@ describe('AppController (e2e)', () => {
           storeId: 'store-1',
           offersSeen: 1,
           offersSynced: 1,
+          gamesCreated: 1,
+          externalIdsCreated: 1,
+          offersCreated: 1,
+          offersUpdated: 0,
           checkoutUrl: 'https://www.epicgames.com/store/purchase',
         });
         expect(typeof body.syncedAt).toBe('string');
+      });
+  });
+
+  it('/api/internal/sync-jobs (GET) rejects missing internal API key', () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    return request(server).get('/api/internal/sync-jobs').expect(401);
+  });
+
+  it('/api/internal/sync-jobs (GET) lists jobs with internal API key', () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    return request(server)
+      .get('/api/internal/sync-jobs')
+      .set('x-api-key', internalApiKey)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body).toEqual([
+          {
+            id: 'sync-job-1',
+            jobType: 'EPIC_WEEKLY_FREE_OFFERS',
+            status: 'SUCCEEDED',
+            startedAt: '2026-07-04T00:00:00.000Z',
+            finishedAt: '2026-07-04T00:01:00.000Z',
+            metadata: { offersSynced: 1 },
+            createdAt: '2026-07-04T00:00:00.000Z',
+            updatedAt: '2026-07-04T00:01:00.000Z',
+            store: {
+              id: 'store-1',
+              name: 'Epic Games Store',
+            },
+          },
+        ]);
       });
   });
 

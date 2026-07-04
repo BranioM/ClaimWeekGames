@@ -24,6 +24,7 @@
 - Opaque session tokens are stored only as hashes in `UserSession`.
 - Internal Epic sync and account-connection endpoints are guarded by `x-api-key` and `INTERNAL_API_KEY`.
 - Internal session bootstrap is guarded by `x-api-key` and `INTERNAL_API_KEY`.
+- E2E tests cover health, public offers, authenticated user identity, and internal guard boundaries.
 - GitHub Actions CI validates pull requests.
 
 ## Verification Baseline
@@ -42,6 +43,8 @@ Last verified commands:
 - `curl http://localhost:3002/api/health`
 - `curl http://localhost:3002/api/free-offers`
 - unauthenticated `POST /api/internal/epic/sync/free-offers` returns `401`
+- unauthenticated `GET /api/me` returns `401`
+- authenticated internal session bootstrap with invalid body reaches validation and returns `400`
 
 ## Open Work
 

@@ -18,6 +18,7 @@ Completed:
 - Internal API-key guard for sync endpoints.
 - Internal API-key guarded Epic account connection endpoints.
 - Opaque bearer session foundation with hashed `UserSession` records.
+- Expanded API e2e coverage for public endpoints, authenticated identity, and internal guard boundaries.
 
 ## Next Milestone: Auth and Public API Boundary
 

@@ -23,6 +23,7 @@ Implemented safeguards:
 - Internal sync endpoints require an `x-api-key` header matching `INTERNAL_API_KEY`.
 - Internal sync endpoints deny access if `INTERNAL_API_KEY` is not configured.
 - Internal account connection endpoints require the same API-key boundary until user authentication exists.
+- E2E tests verify authenticated and internal API-key boundaries reject unauthenticated requests.
 
 ## Secrets Policy
 

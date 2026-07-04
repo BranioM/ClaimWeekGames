@@ -1,159 +1,157 @@
-# Turborepo starter
+# ClaimWeekGames
 
-This Turborepo starter is maintained by the Turborepo core team.
+ClaimWeekGames is an open-source application for tracking, synchronizing, and managing free games and owned games across digital game stores.
 
-## Using this example
+The long-term goal is a unified game library where users can see free weekly offers, connected store accounts, and owned games in one place.
 
-Run the following command:
+## Current Status
 
-```sh
-npx create-turbo@latest
+The backend foundation is implemented and verified:
+
+- TurboRepo workspace with NestJS API and Next.js web app.
+- PostgreSQL and Redis via Docker Compose.
+- Prisma 7 configured with additive migrations.
+- Health endpoint with database probe.
+- Public active free-offer endpoint.
+- Internal Epic free-offer and ownership sync endpoints.
+- Epic account connection foundation using one-time hashed state values.
+- Opaque bearer session foundation using hashed `UserSession` records.
+- API e2e coverage for health, public offers, authenticated identity, and internal guard boundaries.
+
+## Stack
+
+Backend:
+
+- NestJS
+- TypeScript
+- Prisma
+- PostgreSQL
+- Redis
+
+Frontend:
+
+- Next.js
+- React
+- TypeScript
+
+Infrastructure:
+
+- Docker
+- Docker Compose
+- GitHub Actions
+- npm workspaces
+- TurboRepo
+
+## Repository Layout
+
+```text
+apps/
+  api/        NestJS API
+  web/        Next.js web app
+docs/         Architecture, API, database, roadmap, status, security, decisions
+packages/     Shared workspace packages
 ```
 
-## What's inside?
+## Local Development
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Start infrastructure:
 
 ```sh
-cd my-turborepo
-turbo build
+docker compose up -d
 ```
 
-Without global `turbo`, use your package manager:
+Install dependencies:
 
 ```sh
-cd my-turborepo
-npx turbo build
-npm dlx turbo build
-npm exec turbo build
+npm install
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Apply database migrations:
 
 ```sh
-turbo build --filter=docs
+cd apps/api
+npx prisma migrate deploy
 ```
 
-Without global `turbo`:
+Run the API in development mode:
 
 ```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
+PORT=3002 npm run start:dev --workspace api
 ```
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Check health:
 
 ```sh
-cd my-turborepo
-turbo dev
+curl http://localhost:3002/api/health
 ```
 
-Without global `turbo`, use your package manager:
+Expected response shape:
+
+```json
+{
+  "status": "ok",
+  "database": "ok",
+  "timestamp": "2026-07-04T17:00:57.246Z"
+}
+```
+
+## Verification
+
+Before considering a backend change complete, run:
 
 ```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
+npm run build
+npm run lint --workspace api
+npm test --workspace api
+npm run test:e2e --workspace api
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Database checks:
 
 ```sh
-turbo dev --filter=web
+cd apps/api
+npx prisma validate
+npx prisma migrate status
 ```
 
-Without global `turbo`:
+## Documentation
 
-```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
-```
+Maintained project documents:
 
-### Remote Caching
+- `AGENTS.md` describes how agents should work on the project.
+- `docs/architecture.md` describes system design, modules, data model, and synchronization flow.
+- `docs/API.md` describes public and internal API contracts.
+- `docs/Database.md` describes Prisma schema relationships and migration policy.
+- `docs/Security.md` describes the current security posture and open risks.
+- `docs/Roadmap.md` describes planned milestones.
+- `docs/ProjectStatus.md` describes current capabilities and verification status.
+- `docs/Decisions.md` records architecture and security decisions.
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## Architecture Summary
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+The backend uses modular NestJS architecture. Controllers stay thin, business logic lives in services, and database access goes through Prisma.
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Current backend modules:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+- `DatabaseModule`
+- `HealthModule`
+- `AuthModule`
+- `SecurityModule`
+- `FreeOffersModule`
+- `EpicAccountsModule`
+- `EpicGamesModule`
 
-```sh
-cd my-turborepo
-turbo login
-```
+Epic Games is the first store integration. Future integrations should follow the same module pattern for Steam, GOG, Xbox, Amazon Games, Ubisoft Connect, and EA App.
 
-Without global `turbo`, use your package manager:
+## Security Summary
 
-```sh
-cd my-turborepo
-npx turbo login
-npm exec turbo login
-npm exec turbo login
-```
+ClaimWeekGames currently avoids credential custody:
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+- No Epic passwords are stored.
+- No Epic tokens are stored.
+- Account connection state is hashed, one-time-use, and expiring.
+- Session tokens are stored only as hashes.
+- Internal mutation endpoints require `x-api-key` and `INTERNAL_API_KEY`.
+- User endpoints require opaque bearer sessions.
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-npm exec turbo link
-npm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+See `docs/Security.md` for the full security posture.

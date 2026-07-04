@@ -58,13 +58,13 @@ Examples:
 
 Business logic belongs in services. Controllers should remain thin.
 
-For system design details, see `docs/Architecture.md`.
+For system design details, see `docs/architecture.md`.
 
 ## Documentation
 
 Always maintain these files when the related area changes:
 
-- `docs/Architecture.md` for system design, modules, and flow diagrams.
+- `docs/architecture.md` for system design, modules, and flow diagrams.
 - `docs/Roadmap.md` for planned milestones and next work.
 - `docs/ProjectStatus.md` for current capabilities, verification, and open work.
 - `docs/Decisions.md` for architectural and security decisions.

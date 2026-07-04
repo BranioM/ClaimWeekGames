@@ -6,6 +6,7 @@ import { EpicAccountsModule } from './epic-accounts/epic-accounts.module.js';
 import { EpicGamesModule } from './epic-games/epic-games.module.js';
 import { FreeOffersModule } from './free-offers/free-offers.module.js';
 import { HealthModule } from './health/health.module.js';
+import { SchedulerModule } from './scheduler/scheduler.module.js';
 import { SecurityModule } from './security/security.module.js';
 import { SyncJobsModule } from './sync-jobs/sync-jobs.module.js';
 
@@ -22,6 +23,7 @@ import { SyncJobsModule } from './sync-jobs/sync-jobs.module.js';
     SyncJobsModule,
     EpicAccountsModule,
     EpicGamesModule,
+    SchedulerModule,
   ],
 })
 export class AppModule {}

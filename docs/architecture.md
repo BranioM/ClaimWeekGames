@@ -11,9 +11,10 @@ The backend is organized by feature modules. Controllers stay thin, services con
 - `AuthModule` owns opaque application sessions and authenticated-user request context.
 - `EpicAccountsModule` owns secure Epic account connection state and connected-account registration.
 - `EpicGamesModule` is the first store integration and the highest-priority synchronization path.
+- `SchedulerModule` owns Redis-backed BullMQ queue registration and scheduled store synchronization jobs.
 - Future store modules should follow the same shape as Epic Games: one module per store, store-specific services, and shared library ownership handled outside the store module.
 
-Expected future modules include `SteamModule`, `GogModule`, `XboxModule`, `AmazonGamesModule`, `UbisoftConnectModule`, `EaAppModule`, `LibraryModule`, `NotificationModule`, and `SchedulerModule`.
+Expected future modules include `SteamModule`, `GogModule`, `XboxModule`, `AmazonGamesModule`, `UbisoftConnectModule`, `EaAppModule`, `LibraryModule`, and `NotificationModule`.
 
 ## Architecture Diagram
 
@@ -33,6 +34,7 @@ flowchart TB
     PrismaModule["PrismaModule"]
     EpicAccountsModule["EpicAccountsModule"]
     EpicGamesModule["EpicGamesModule"]
+    SchedulerModule["SchedulerModule"]
 
     HealthController["HealthController\nGET /api/health"]
     FreeOffersController["FreeOffersController\nGET /api/free-offers"]
@@ -49,6 +51,8 @@ flowchart TB
     EpicCheckout["EpicGamesCheckoutService\nuser-assisted checkout URL"]
     EpicSync["EpicGamesSyncService\nupsert games, IDs, offers"]
     EpicOwnershipSync["EpicOwnershipSyncService\nmetadata-only owned games sync"]
+    EpicScheduler["EpicFreeOffersSchedulerService\nThursday 18:00 Bratislava"]
+    EpicProcessor["EpicFreeOffersProcessor\nBullMQ worker"]
   end
 
   subgraph Stores["External Store Integrations"]
@@ -58,7 +62,7 @@ flowchart TB
 
   subgraph Data["Data Layer"]
     Postgres["PostgreSQL\nUser -> UserSession\nUser -> ConnectedAccount -> Ownership -> Game\nStore -> FreeOffer\nStore -> SyncJob\nPlayPlatform future catalog"]
-    Redis["Redis\nfuture scheduling/cache/events"]
+    Redis["Redis\nBullMQ repeatable jobs\nfuture cache/events"]
   end
 
   Web --> Api
@@ -69,6 +73,7 @@ flowchart TB
   AppModule --> DatabaseModule
   AppModule --> EpicAccountsModule
   AppModule --> EpicGamesModule
+  AppModule --> SchedulerModule
   DatabaseModule --> PrismaModule
   PrismaModule --> PrismaService
   HealthModule --> HealthController
@@ -95,10 +100,13 @@ flowchart TB
   EpicSync --> EpicClient
   EpicSync --> EpicCheckout
   EpicOwnershipSync --> PrismaService
+  SchedulerModule --> EpicScheduler
+  SchedulerModule --> EpicProcessor
+  EpicScheduler --> Redis
+  EpicProcessor --> EpicSync
   EpicClient --> EpicStore
   EpicSync --> PrismaService
   PrismaService --> Postgres
-  Api -.future.-> Redis
   FutureStores -.future modules.-> Api
 ```
 
@@ -135,6 +143,8 @@ Store synchronization should follow a consistent pipeline:
 9. Emit domain events for notifications and downstream processing.
 
 Epic Games is the first implementation target. Its weekly free-offer sync currently ensures the Epic Games Store exists, records a `SyncJob`, fetches current/upcoming promotions, normalizes games, upserts external IDs and free-offer windows, and stores creation/update counters in job metadata.
+
+The scheduled Epic free-offer path uses BullMQ backed by Redis. `SchedulerModule` registers a repeatable `epic.free-offers.sync` job on the `epic-sync` queue for every Thursday at 18:00 Europe/Bratislava time. The processor delegates to the same `EpicGamesSyncService` used by the manual internal endpoint, so manual and automated runs share persistence, idempotency, `SyncJob` creation, failure recording, and result counters.
 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 

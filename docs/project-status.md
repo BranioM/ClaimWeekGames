@@ -6,6 +6,7 @@
 
 ## Latest Completed Commits
 
+- `72e83af feat: harden Epic free-offer sync`
 - `b1dcc29 feat: implement Epic weekly free-offer sync`
 - `c22a9fd feat: add PlayPlatform and security baseline`
 - `4eb9868 refactor: rename Platform to Store`
@@ -17,6 +18,8 @@
 - Prisma migrations are applied locally.
 - Epic weekly free-game offers can be fetched, normalized, persisted, and tracked with `SyncJob`.
 - Epic sync records creation/update counters in `SyncJob.metadata`.
+- Epic weekly free-offer sync is scheduled through Redis-backed BullMQ every Thursday at 18:00 Europe/Bratislava time.
+- Scheduled Epic sync retries up to 3 times with exponential backoff and logs failures before BullMQ retry handling.
 - Internal recent sync-job reads are available at `GET /api/internal/sync-jobs`.
 - Epic account connection state can be generated and consumed without storing raw state, passwords, or tokens.
 - Epic owned-game metadata can be persisted for an active connected account.
@@ -44,9 +47,10 @@ Last verified commands:
 - `npm run test:e2e --workspace api`
 - `npx prisma migrate status`
 - `npm run build`
-- `PORT=3002 npm run start:dev --workspace api`
-- `curl http://localhost:3002/api/health`
-- `curl http://localhost:3002/api/free-offers`
+- `npm run build --workspace api`
+- `npm run start:dev --workspace api`
+- `curl http://localhost:3001/api/health`
+- `curl http://localhost:3001/api/free-offers`
 - unauthenticated `POST /api/internal/epic/sync/free-offers` returns `401`
 - authenticated e2e `POST /api/internal/epic/sync/free-offers` creates a successful sync response
 - e2e `GET /api/internal/sync-jobs` requires the internal API key
@@ -55,9 +59,8 @@ Last verified commands:
 
 ## Open Work
 
-- Scheduler module.
-- Services that create and execute `SyncJob` records.
-- Real scheduler trigger for `SyncJob` execution.
+- Production scheduler operations: queue dashboard, alerting, and dead-letter handling.
+- Cluster-safe scheduler deployment policy so only intended API/worker processes register repeatable jobs.
 - Public signup/login or external identity-provider callback.
 - Session revocation endpoint.
 - Public user-authenticated account connection endpoints using `AuthenticatedUserGuard`.

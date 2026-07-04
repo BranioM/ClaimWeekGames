@@ -19,10 +19,40 @@ Store
   -> ExternalGameId
   -> SyncJob
 
+ConnectedAccount
+  -> SyncJob
+
+PlayPlatform
+  future playable platform catalog
+
 Game
   -> ExternalGameId
   -> FreeGameOffer
   -> Ownership
+```
+
+## ERD
+
+```mermaid
+erDiagram
+  User ||--o{ UserSession : has
+  User ||--o{ ConnectedAccount : owns
+  User ||--o{ AccountConnectionState : starts
+  Store ||--o{ ConnectedAccount : hosts
+  Store ||--o{ AccountConnectionState : scopes
+  Store ||--o{ ExternalGameId : identifies
+  Store ||--o{ FreeGameOffer : offers
+  Store ||--o{ SyncJob : scopes
+  ConnectedAccount ||--o{ Ownership : owns
+  ConnectedAccount ||--o{ SyncJob : scopes
+  Game ||--o{ ExternalGameId : maps
+  Game ||--o{ Ownership : owned_as
+  Game ||--o{ FreeGameOffer : promoted_as
+  PlayPlatform {
+    string id
+    string name
+    string slug
+  }
 ```
 
 ## Tables
@@ -70,6 +100,33 @@ Important fields:
 - `id`
 - `name`
 - `createdAt`
+
+### `PlayPlatform`
+
+Future-ready playable platform catalog, intentionally not wired deeply yet.
+
+Examples:
+
+- PC
+- macOS
+- Linux
+- Xbox
+- PlayStation
+- Nintendo Switch
+- cloud gaming
+
+Important fields:
+
+- `id`
+- `name`
+- `slug`
+- `createdAt`
+- `updatedAt`
+
+Constraints:
+
+- unique `name`
+- unique `slug`
 
 ### `ConnectedAccount`
 
@@ -158,9 +215,10 @@ Important fields:
 - `jobType`
 - `status`
 - `storeId`
+- `connectedAccountId`
 - `startedAt`
 - `finishedAt`
-- `errorMessage`
+- `error`
 - `metadata`
 - `createdAt`
 - `updatedAt`
@@ -169,6 +227,7 @@ Constraints:
 
 - indexed `(status, createdAt)`
 - indexed `(storeId, jobType, createdAt)`
+- indexed `(connectedAccountId, status, createdAt)`
 
 ## Migration Policy
 

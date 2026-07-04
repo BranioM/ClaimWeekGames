@@ -44,6 +44,14 @@ model Store {
   syncJobs                SyncJob[]
 }
 
+model PlayPlatform {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Game {
   id        String   @id @default(cuid())
   title     String
@@ -89,6 +97,7 @@ model ConnectedAccount {
   user       User        @relation(fields: [userId], references: [id])
   store      Store       @relation(fields: [storeId], references: [id])
   ownerships Ownership[]
+  syncJobs   SyncJob[]
 
   @@unique([userId, storeId, accountKey])
   @@unique([storeId, externalAccountId])
@@ -148,22 +157,25 @@ model FreeGameOffer {
 }
 
 model SyncJob {
-  id           String        @id @default(cuid())
-  jobType      String
-  status       SyncJobStatus @default(PENDING)
-  startedAt    DateTime?
-  finishedAt   DateTime?
-  errorMessage String?
-  metadata     Json?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id         String        @id @default(cuid())
+  jobType    String
+  status     SyncJobStatus @default(PENDING)
+  startedAt  DateTime?
+  finishedAt DateTime?
+  error      String?
+  metadata   Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
-  storeId String?
+  storeId            String?
+  connectedAccountId String?
 
-  store Store? @relation(fields: [storeId], references: [id])
+  store            Store?            @relation(fields: [storeId], references: [id])
+  connectedAccount ConnectedAccount? @relation(fields: [connectedAccountId], references: [id])
 
   @@index([status, createdAt])
   @@index([storeId, jobType, createdAt])
+  @@index([connectedAccountId, status, createdAt])
 }
 
 enum SyncJobStatus {

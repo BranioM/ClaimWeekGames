@@ -20,7 +20,8 @@ Completed:
 - Opaque bearer session foundation with hashed `UserSession` records.
 - Expanded API e2e coverage for public endpoints, authenticated identity, and internal guard boundaries.
 - Store domain terminology replacing Platform.
-- SyncJob data model for future scheduled synchronization.
+- PlayPlatform catalog placeholder for future playable platform metadata.
+- SyncJob data model for future scheduled synchronization by store and connected account.
 
 ## Next Milestone: Auth and Public API Boundary
 

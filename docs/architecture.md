@@ -57,7 +57,7 @@ flowchart TB
   end
 
   subgraph Data["Data Layer"]
-    Postgres["PostgreSQL\nUser -> UserSession\nUser -> ConnectedAccount -> Ownership -> Game\nStore -> FreeOffer\nStore -> SyncJob"]
+    Postgres["PostgreSQL\nUser -> UserSession\nUser -> ConnectedAccount -> Ownership -> Game\nStore -> FreeOffer\nStore -> SyncJob\nPlayPlatform future catalog"]
     Redis["Redis\nfuture scheduling/cache/events"]
   end
 
@@ -108,7 +108,8 @@ The current Prisma schema separates game metadata from ownership and stores:
 
 - `Game` stores canonical game metadata such as title, slug, developer, and publisher.
 - `Store` stores digital stores such as Epic Games Store or Steam.
-- `SyncJob` records synchronization attempts, status, timing, store scope, and error metadata.
+- `PlayPlatform` is a future-ready playable platform catalog. It is not wired deeply into game metadata yet.
+- `SyncJob` records synchronization attempts, status, timing, store scope, optional connected-account scope, and error metadata.
 - `User` stores application users.
 - `UserSession` stores hashed opaque bearer sessions for authenticated application access.
 - `ConnectedAccount` links a user to a store account without storing credentials. This is the boundary for multi-account support.

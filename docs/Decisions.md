@@ -28,7 +28,13 @@ Reason: ClaimWeekGames integrates digital game stores. `Store` is clearer than `
 
 Decision: add `SyncJob` as the durable record for synchronization attempts.
 
-Reason: synchronization will become scheduled, observable, and retryable. A first-class job record gives the scheduler, notifications, and support tooling a shared source of truth for status, timing, scoped store, and error metadata.
+Reason: synchronization will become scheduled, observable, and retryable. A first-class job record gives the scheduler, notifications, and support tooling a shared source of truth for status, timing, scoped store, scoped connected account, and error metadata.
+
+## 2026-07-04: Keep PlayPlatform Separate From Store
+
+Decision: add `PlayPlatform` as a separate future-ready catalog instead of overloading `Store`.
+
+Reason: stores are ownership and offer sources, while play platforms are where a game can run. Keeping them separate avoids confusing commerce integration with compatibility metadata.
 
 ## 2026-07-04: Do Not Store Epic Passwords
 

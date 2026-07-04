@@ -123,8 +123,8 @@ Maintained project documents:
 - `AGENTS.md` describes how agents should work on the project.
 - `docs/architecture.md` describes system design, modules, data model, and synchronization flow.
 - `docs/API.md` describes public and internal API contracts.
-- `docs/Database.md` describes Prisma schema relationships and migration policy.
-- `docs/Security.md` describes the current security posture and open risks.
+- `docs/database.md` describes Prisma schema relationships and migration policy.
+- `docs/security.md` describes the current security posture and open risks.
 - `docs/Roadmap.md` describes planned milestones.
 - `docs/ProjectStatus.md` describes current capabilities and verification status.
 - `docs/Decisions.md` records architecture and security decisions.
@@ -156,4 +156,4 @@ ClaimWeekGames currently avoids credential custody:
 - Internal mutation endpoints require `x-api-key` and `INTERNAL_API_KEY`.
 - User endpoints require opaque bearer sessions.
 
-See `docs/Security.md` for the full security posture.
+See `docs/security.md` for the full security posture.

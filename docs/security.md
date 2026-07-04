@@ -80,11 +80,65 @@ Current internal endpoint boundary:
 
 These endpoints are guarded by `InternalApiKeyGuard` and are not a replacement for user authentication.
 
+### API Key Guard
+
+`InternalApiKeyGuard` protects internal mutation endpoints with the `x-api-key` header.
+
+Rules:
+
+- the configured key must come from `INTERNAL_API_KEY`.
+- missing configuration fails closed.
+- missing request header fails closed.
+- invalid keys are rejected.
+- comparisons use timing-safe comparison for equal-length values.
+
+The internal API key is for service/admin boundaries only. It is not user authentication.
+
 Current authenticated user boundary:
 
 - `GET /api/me`
 
 This endpoint is guarded by `AuthenticatedUserGuard` and requires an opaque bearer session token.
+
+### Bearer Sessions
+
+Authenticated user endpoints use `Authorization: Bearer <session-token>`.
+
+Session rules:
+
+- raw session tokens are returned once.
+- only SHA-256 token hashes are stored.
+- expired sessions are rejected.
+- revoked sessions are rejected.
+- successful authentication updates session `lastUsedAt`.
+
+Bearer sessions currently identify application users. They do not yet provide fine-grained authorization for every user-owned resource.
+
+### Secret Handling
+
+Secrets must stay out of Git.
+
+Use environment variables for:
+
+- `DATABASE_URL`
+- `REDIS_URL`
+- `INTERNAL_API_KEY`
+- future OAuth client secrets
+- future encryption keys
+
+Do not log secrets, session tokens, OAuth tokens, cookies, or API keys.
+
+### Current Authentication Limitations
+
+Current limitations:
+
+- no public signup flow yet.
+- no public login flow yet.
+- internal session bootstrap exists only behind `InternalApiKeyGuard`.
+- no refresh-token flow.
+- no user-facing session revocation endpoint.
+- no rate limiting yet.
+- no encrypted third-party token storage yet.
 
 ## Open Security Work
 

@@ -6,9 +6,9 @@
 
 ## Latest Completed Commits
 
-- `ca10860 feat: add internal Epic account endpoints`
-- `2982075 feat: add API boundary for offers and sync`
-- `9fc6791 feat: add Epic ownership sync foundation`
+- `b1dcc29 feat: implement Epic weekly free-offer sync`
+- `c22a9fd feat: add PlayPlatform and security baseline`
+- `4eb9868 refactor: rename Platform to Store`
 
 ## Current Capabilities
 
@@ -46,6 +46,7 @@ Last verified commands:
 - `curl http://localhost:3002/api/health`
 - `curl http://localhost:3002/api/free-offers`
 - unauthenticated `POST /api/internal/epic/sync/free-offers` returns `401`
+- authenticated e2e `POST /api/internal/epic/sync/free-offers` creates a successful sync response
 - unauthenticated `GET /api/me` returns `401`
 - authenticated internal session bootstrap with invalid body reaches validation and returns `400`
 

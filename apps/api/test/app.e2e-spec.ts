@@ -2,6 +2,8 @@ import { jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { EpicGamesCheckoutService } from './../src/epic-games/epic-games-checkout.service.js';
+import { EpicGamesClientService } from './../src/epic-games/epic-games-client.service.js';
 import { AppModule } from './../src/app.module.js';
 import { PrismaService } from './../src/prisma/prisma.service.js';
 
@@ -21,6 +23,7 @@ describe('AppController (e2e)', () => {
         $disconnect: jest.fn(),
         $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
         freeGameOffer: {
+          upsert: jest.fn().mockResolvedValue({ id: 'offer-1' }),
           findMany: jest.fn().mockResolvedValue([
             {
               id: 'offer-1',
@@ -42,6 +45,19 @@ describe('AppController (e2e)', () => {
             },
           ]),
         },
+        store: {
+          upsert: jest.fn().mockResolvedValue({ id: 'store-1' }),
+        },
+        syncJob: {
+          create: jest.fn().mockResolvedValue({ id: 'sync-job-1' }),
+          update: jest.fn().mockResolvedValue({ id: 'sync-job-1' }),
+        },
+        game: {
+          upsert: jest.fn().mockResolvedValue({ id: 'game-1' }),
+        },
+        externalGameId: {
+          upsert: jest.fn().mockResolvedValue({ id: 'external-game-1' }),
+        },
         user: {
           findUnique: jest.fn().mockResolvedValue({
             id: 'user-1',
@@ -61,6 +77,27 @@ describe('AppController (e2e)', () => {
           }),
           update: jest.fn().mockResolvedValue({}),
         },
+      })
+      .overrideProvider(EpicGamesClientService)
+      .useValue({
+        getFreeGameOffers: jest.fn().mockResolvedValue([
+          {
+            providerGameId: 'epic-game-1',
+            providerNamespace: 'namespace-1',
+            title: 'Example Game',
+            slug: 'example-game',
+            developer: 'Example Dev',
+            publisher: 'Example Publisher',
+            startDate: new Date('2026-07-01T00:00:00.000Z'),
+            endDate: new Date('2026-07-08T00:00:00.000Z'),
+          },
+        ]),
+      })
+      .overrideProvider(EpicGamesCheckoutService)
+      .useValue({
+        generateCheckoutUrl: jest
+          .fn()
+          .mockReturnValue('https://www.epicgames.com/store/purchase'),
       })
       .compile();
 
@@ -188,6 +225,34 @@ describe('AppController (e2e)', () => {
     return request(server)
       .post('/api/internal/epic/sync/free-offers')
       .expect(401);
+  });
+
+  it('/api/internal/epic/sync/free-offers (POST) syncs with internal API key', () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    return request(server)
+      .post('/api/internal/epic/sync/free-offers')
+      .set('x-api-key', internalApiKey)
+      .expect(201)
+      .expect((response) => {
+        const body = response.body as {
+          syncJobId?: unknown;
+          storeId?: unknown;
+          offersSeen?: unknown;
+          offersSynced?: unknown;
+          checkoutUrl?: unknown;
+          syncedAt?: unknown;
+        };
+
+        expect(body).toMatchObject({
+          syncJobId: 'sync-job-1',
+          storeId: 'store-1',
+          offersSeen: 1,
+          offersSynced: 1,
+          checkoutUrl: 'https://www.epicgames.com/store/purchase',
+        });
+        expect(typeof body.syncedAt).toBe('string');
+      });
   });
 
   afterEach(async () => {

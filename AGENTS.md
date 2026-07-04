@@ -66,9 +66,9 @@ Always maintain these files when the related area changes:
 
 - `docs/architecture.md` for system design, modules, and flow diagrams.
 - `docs/Roadmap.md` for planned milestones and next work.
-- `docs/ProjectStatus.md` for current capabilities, verification, and open work.
+- `docs/project-status.md` for current capabilities, verification, and open work.
 - `docs/Decisions.md` for architectural and security decisions.
-- `docs/API.md` for public and internal API/service contracts.
+- `docs/api.md` for public and internal API/service contracts.
 - `docs/database.md` for schema, relationships, and migration policy.
 - `docs/security.md` for security posture, requirements, and open risks.
 

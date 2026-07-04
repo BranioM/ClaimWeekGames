@@ -13,6 +13,7 @@ model User {
   createdAt DateTime @default(now())
 
   connectedAccounts ConnectedAccount[]
+  accountConnectionStates AccountConnectionState[]
 }
 
 model Platform {
@@ -21,6 +22,7 @@ model Platform {
   createdAt DateTime @default(now())
 
   connectedAccounts ConnectedAccount[]
+  accountConnectionStates AccountConnectionState[]
   externalGameIds ExternalGameId[]
   offers          FreeGameOffer[]
 }
@@ -58,6 +60,9 @@ model ConnectedAccount {
   accountKey        String
   externalAccountId String?
   displayName       String?
+  status            ConnectedAccountStatus @default(ACTIVE)
+  lastSyncedAt      DateTime?
+  disconnectedAt    DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -70,6 +75,29 @@ model ConnectedAccount {
 
   @@unique([userId, platformId, accountKey])
   @@unique([platformId, externalAccountId])
+}
+
+model AccountConnectionState {
+  id         String   @id @default(cuid())
+  stateHash  String   @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  userId     String
+  platformId String
+
+  user     User     @relation(fields: [userId], references: [id])
+  platform Platform @relation(fields: [platformId], references: [id])
+
+  @@index([userId, platformId, consumedAt, expiresAt])
+}
+
+enum ConnectedAccountStatus {
+  PENDING
+  ACTIVE
+  DISCONNECTED
+  REVOKED
 }
 
 model Ownership {

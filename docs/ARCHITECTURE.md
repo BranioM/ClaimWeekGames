@@ -8,6 +8,7 @@ The backend is organized by feature modules. Controllers stay thin, services con
 
 - `DatabaseModule` owns database access and exports Prisma infrastructure.
 - `HealthModule` exposes application and database health checks.
+- `EpicAccountsModule` owns secure Epic account connection state and connected-account registration.
 - `EpicGamesModule` is the first store integration and the highest-priority synchronization path.
 - Future store modules should follow the same shape as Epic Games: one module per store, store-specific services, and shared library ownership handled outside the store module.
 
@@ -26,11 +27,13 @@ flowchart TB
     HealthModule["HealthModule"]
     DatabaseModule["DatabaseModule"]
     PrismaModule["PrismaModule"]
+    EpicAccountsModule["EpicAccountsModule"]
     EpicGamesModule["EpicGamesModule"]
 
     HealthController["HealthController\nGET /api/health"]
     HealthService["HealthService"]
     PrismaService["PrismaService\nPrisma 7 + PostgreSQL adapter"]
+    EpicAccountConnection["EpicAccountConnectionService\nhashed one-time state"]
     EpicClient["EpicGamesClientService\nfetch + normalize promotions"]
     EpicCheckout["EpicGamesCheckoutService\nuser-assisted checkout URL"]
     EpicSync["EpicGamesSyncService\nupsert games, IDs, offers"]
@@ -49,12 +52,15 @@ flowchart TB
   Web --> Api
   AppModule --> HealthModule
   AppModule --> DatabaseModule
+  AppModule --> EpicAccountsModule
   AppModule --> EpicGamesModule
   DatabaseModule --> PrismaModule
   PrismaModule --> PrismaService
   HealthModule --> HealthController
   HealthController --> HealthService
   HealthService --> PrismaService
+  EpicAccountsModule --> EpicAccountConnection
+  EpicAccountConnection --> PrismaService
   EpicGamesModule --> EpicClient
   EpicGamesModule --> EpicCheckout
   EpicGamesModule --> EpicSync
@@ -75,6 +81,7 @@ The current Prisma schema separates game metadata from ownership and store platf
 - `Platform` stores digital stores such as Epic Games Store or Steam. It currently represents the Store concept.
 - `User` stores application users.
 - `ConnectedAccount` links a user to a platform account without storing credentials. This is the boundary for multi-account support.
+- `AccountConnectionState` stores a hashed, one-time, expiring state token used during account onboarding. Raw state values are returned to the caller but never persisted.
 - `Ownership` links a connected account to a game. Ownership is intentionally separate from `Game` because the same game can exist on multiple stores and multiple accounts.
 - `FreeGameOffer` tracks detected free-game windows per game and platform.
 - `ExternalGameId` maps platform-specific game identifiers to canonical `Game` records.
@@ -95,7 +102,7 @@ Store synchronization should follow a consistent pipeline:
 
 Epic Games is the first implementation target. Its service foundation currently ensures the Epic Games Store platform exists and provides a place to add weekly offer, historical offer, owned game, multi-account, and duplicate-detection workflows.
 
-Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
+Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 
 ## Future Integrations
 

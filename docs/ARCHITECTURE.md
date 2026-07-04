@@ -13,15 +13,71 @@ The backend is organized by feature modules. Controllers stay thin, services con
 
 Expected future modules include `SteamModule`, `GogModule`, `XboxModule`, `AmazonGamesModule`, `UbisoftConnectModule`, `EaAppModule`, `LibraryModule`, `NotificationModule`, and `SchedulerModule`.
 
+## Architecture Diagram
+
+```mermaid
+flowchart TB
+  subgraph Client["Client Layer"]
+    Web["Next.js Web App"]
+  end
+
+  subgraph Api["NestJS API"]
+    AppModule["AppModule"]
+    HealthModule["HealthModule"]
+    DatabaseModule["DatabaseModule"]
+    PrismaModule["PrismaModule"]
+    EpicGamesModule["EpicGamesModule"]
+
+    HealthController["HealthController\nGET /api/health"]
+    HealthService["HealthService"]
+    PrismaService["PrismaService\nPrisma 7 + PostgreSQL adapter"]
+    EpicClient["EpicGamesClientService\nfetch + normalize promotions"]
+    EpicCheckout["EpicGamesCheckoutService\nuser-assisted checkout URL"]
+    EpicSync["EpicGamesSyncService\nupsert games, IDs, offers"]
+  end
+
+  subgraph Stores["External Store Integrations"]
+    EpicStore["Epic Games Store\nfree games promotions"]
+    FutureStores["Steam / GOG / Xbox / Amazon / Ubisoft / EA"]
+  end
+
+  subgraph Data["Data Layer"]
+    Postgres["PostgreSQL\nUser -> ConnectedAccount -> Ownership -> Game\nStore/Platform -> FreeOffer"]
+    Redis["Redis\nfuture scheduling/cache/events"]
+  end
+
+  Web --> Api
+  AppModule --> HealthModule
+  AppModule --> DatabaseModule
+  AppModule --> EpicGamesModule
+  DatabaseModule --> PrismaModule
+  PrismaModule --> PrismaService
+  HealthModule --> HealthController
+  HealthController --> HealthService
+  HealthService --> PrismaService
+  EpicGamesModule --> EpicClient
+  EpicGamesModule --> EpicCheckout
+  EpicGamesModule --> EpicSync
+  EpicSync --> EpicClient
+  EpicSync --> EpicCheckout
+  EpicClient --> EpicStore
+  EpicSync --> PrismaService
+  PrismaService --> Postgres
+  Api -.future.-> Redis
+  FutureStores -.future modules.-> Api
+```
+
 ## Data Model
 
 The current Prisma schema separates game metadata from ownership and store platforms:
 
 - `Game` stores canonical game metadata such as title, slug, developer, and publisher.
-- `Platform` stores digital stores such as Epic Games Store or Steam.
+- `Platform` stores digital stores such as Epic Games Store or Steam. It currently represents the Store concept.
 - `User` stores application users.
-- `Ownership` links a user, game, and platform. Ownership is intentionally separate from `Game` because the same game can exist on multiple stores.
+- `ConnectedAccount` links a user to a platform account without storing credentials. This is the boundary for multi-account support.
+- `Ownership` links a connected account to a game. Ownership is intentionally separate from `Game` because the same game can exist on multiple stores and multiple accounts.
 - `FreeGameOffer` tracks detected free-game windows per game and platform.
+- `ExternalGameId` maps platform-specific game identifiers to canonical `Game` records.
 
 This model supports duplicate detection by normalizing games while preserving platform-specific ownership records.
 
@@ -38,6 +94,8 @@ Store synchronization should follow a consistent pipeline:
 7. Emit domain events for notifications and downstream processing.
 
 Epic Games is the first implementation target. Its service foundation currently ensures the Epic Games Store platform exists and provides a place to add weekly offer, historical offer, owned game, multi-account, and duplicate-detection workflows.
+
+Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 
 ## Future Integrations
 

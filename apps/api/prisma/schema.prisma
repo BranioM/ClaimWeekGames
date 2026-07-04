@@ -12,7 +12,7 @@ model User {
   email     String   @unique
   createdAt DateTime @default(now())
 
-  ownerships Ownership[]
+  connectedAccounts ConnectedAccount[]
 }
 
 model Platform {
@@ -20,8 +20,9 @@ model Platform {
   name      String   @unique
   createdAt DateTime @default(now())
 
-  ownerships Ownership[]
-  offers     FreeGameOffer[]
+  connectedAccounts ConnectedAccount[]
+  externalGameIds ExternalGameId[]
+  offers          FreeGameOffer[]
 }
 
 model Game {
@@ -32,34 +33,71 @@ model Game {
   publisher String?
   createdAt DateTime @default(now())
 
+  externalIds ExternalGameId[]
+  ownerships  Ownership[]
+  offers      FreeGameOffer[]
+}
+
+model ExternalGameId {
+  id             String   @id @default(cuid())
+  providerGameId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  gameId     String
+  platformId String
+
+  game     Game     @relation(fields: [gameId], references: [id])
+  platform Platform @relation(fields: [platformId], references: [id])
+
+  @@unique([platformId, providerGameId])
+}
+
+model ConnectedAccount {
+  id                String   @id @default(cuid())
+  accountKey        String
+  externalAccountId String?
+  displayName       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  userId     String
+  platformId String
+
+  user       User        @relation(fields: [userId], references: [id])
+  platform   Platform    @relation(fields: [platformId], references: [id])
   ownerships Ownership[]
-  offers     FreeGameOffer[]
+
+  @@unique([userId, platformId, accountKey])
+  @@unique([platformId, externalAccountId])
 }
 
 model Ownership {
   id         String   @id @default(cuid())
   acquiredAt DateTime @default(now())
 
-  userId     String
-  gameId     String
-  platformId String
+  connectedAccountId String
+  gameId             String
 
-  user     User     @relation(fields: [userId], references: [id])
-  game     Game     @relation(fields: [gameId], references: [id])
-  platform Platform @relation(fields: [platformId], references: [id])
+  connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id])
+  game             Game             @relation(fields: [gameId], references: [id])
 
-  @@unique([userId, gameId, platformId])
+  @@unique([connectedAccountId, gameId])
 }
 
 model FreeGameOffer {
-  id         String   @id @default(cuid())
-  startDate  DateTime
-  endDate    DateTime
-  detectedAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  externalOfferId String?
+  startDate       DateTime
+  endDate         DateTime
+  detectedAt      DateTime @default(now())
 
   gameId     String
   platformId String
 
   game     Game     @relation(fields: [gameId], references: [id])
   platform Platform @relation(fields: [platformId], references: [id])
+
+  @@unique([platformId, externalOfferId])
+  @@unique([gameId, platformId, startDate, endDate])
 }

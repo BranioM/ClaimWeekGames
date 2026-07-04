@@ -18,6 +18,65 @@ Example response:
 }
 ```
 
+### `GET /api/free-offers`
+
+Returns active free-game offer records whose `endDate` is greater than or equal to the current time.
+
+Example response:
+
+```json
+[
+  {
+    "id": "offer-id",
+    "externalOfferId": "external-offer-id",
+    "startDate": "2026-07-01T00:00:00.000Z",
+    "endDate": "2026-07-08T00:00:00.000Z",
+    "detectedAt": "2026-07-04T00:00:00.000Z",
+    "game": {
+      "id": "game-id",
+      "title": "Example Game",
+      "slug": "example-game",
+      "developer": "Example Dev",
+      "publisher": "Example Publisher"
+    },
+    "platform": {
+      "id": "platform-id",
+      "name": "Epic Games Store"
+    }
+  }
+]
+```
+
+### `POST /api/internal/epic/sync/free-offers`
+
+Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
+
+Runs Epic free-offer synchronization.
+
+### `POST /api/internal/epic/sync/ownerships`
+
+Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
+
+Persists normalized Epic ownership metadata for an active connected account.
+
+Request body:
+
+```json
+{
+  "connectedAccountId": "connected-account-id",
+  "ownedGames": [
+    {
+      "providerGameId": "epic-game-id",
+      "title": "Example Game",
+      "slug": "example-game",
+      "developer": "Example Dev",
+      "publisher": "Example Publisher",
+      "acquiredAt": "2026-07-04T00:00:00.000Z"
+    }
+  ]
+}
+```
+
 ## Internal Services
 
 ### `PrismaService`
@@ -86,10 +145,17 @@ Security constraints:
 - state expires after 10 minutes.
 - state can be consumed only once.
 
+### `InternalApiKeyGuard`
+
+Protects internal endpoints with an `x-api-key` header.
+
+Security constraints:
+
+- denies access when `INTERNAL_API_KEY` is missing.
+- uses timing-safe comparison for equal-length keys.
+- currently intended only for internal/admin endpoints, not end-user authentication.
+
 ## Planned HTTP Surface
 
 - `POST /api/epic/accounts/connection-state`
 - `POST /api/epic/accounts/connect`
-- `GET /api/free-offers`
-- `POST /api/sync/epic/free-offers` for internal/admin use only
-- `POST /api/sync/epic/ownerships` for internal/admin use only

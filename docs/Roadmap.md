@@ -14,6 +14,8 @@ Completed:
 - Epic free-offer synchronization foundation.
 - Secure Epic account connection foundation using hashed one-time state.
 - Metadata-only Epic ownership sync persistence.
+- Public active free-offer endpoint.
+- Internal API-key guard for sync endpoints.
 
 ## Next Milestone: Auth and Public API Boundary
 
@@ -24,8 +26,7 @@ Scope:
 - Add authentication/session design.
 - Add authorization guards.
 - Expose account-connection endpoints safely.
-- Expose free-offer read endpoints safely.
-- Keep sync endpoints internal/admin-only.
+- Keep sync endpoints internal/admin-only as the system grows beyond API-key protection.
 
 ## Later Milestones
 

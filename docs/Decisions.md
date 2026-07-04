@@ -35,3 +35,9 @@ Reason: it avoids credential custody and reduces automation risk while still hel
 Decision: add Epic ownership sync as an internal service that accepts normalized owned-game metadata and persists `Game`, `ExternalGameId`, and `Ownership` records.
 
 Reason: this validates the data model and sync behavior without introducing private library fetching, token storage, or credential custody before the auth/session design is complete.
+
+## 2026-07-04: Separate Public Reads From Internal Sync
+
+Decision: expose active free offers publicly while protecting sync endpoints with an internal API key guard.
+
+Reason: free-offer reads are low-risk public data, but synchronization mutates database state and must not be callable without an explicit internal/admin boundary.

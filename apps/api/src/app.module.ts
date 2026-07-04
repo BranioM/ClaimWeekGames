@@ -3,7 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module.js';
 import { EpicAccountsModule } from './epic-accounts/epic-accounts.module.js';
 import { EpicGamesModule } from './epic-games/epic-games.module.js';
+import { FreeOffersModule } from './free-offers/free-offers.module.js';
 import { HealthModule } from './health/health.module.js';
+import { SecurityModule } from './security/security.module.js';
 
 @Module({
   imports: [
@@ -11,7 +13,9 @@ import { HealthModule } from './health/health.module.js';
       isGlobal: true,
     }),
     DatabaseModule,
+    SecurityModule,
     HealthModule,
+    FreeOffersModule,
     EpicAccountsModule,
     EpicGamesModule,
   ],

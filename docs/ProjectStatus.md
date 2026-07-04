@@ -19,6 +19,8 @@
 - Epic account connection state can be generated and consumed without storing raw state, passwords, or tokens.
 - Epic owned-game metadata can be persisted for an active connected account.
 - User-assisted Epic checkout URLs can be generated from free offers.
+- Public active free-offer reads are available at `GET /api/free-offers`.
+- Internal Epic sync endpoints are guarded by `x-api-key` and `INTERNAL_API_KEY`.
 - GitHub Actions CI validates pull requests.
 
 ## Verification Baseline
@@ -35,12 +37,14 @@ Last verified commands:
 - `npm run build`
 - `PORT=3002 npm run start:dev --workspace api`
 - `curl http://localhost:3002/api/health`
+- `curl http://localhost:3002/api/free-offers`
+- unauthenticated `POST /api/internal/epic/sync/free-offers` returns `401`
 
 ## Open Work
 
 - Scheduler module.
 - Authentication and user session design.
-- Public API controllers for account connection and offers.
+- Public API controllers for account connection.
 - Authenticated Epic library retrieval.
 - Web UI.
 - Notification event pipeline.

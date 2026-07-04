@@ -25,13 +25,18 @@ flowchart TB
   subgraph Api["NestJS API"]
     AppModule["AppModule"]
     HealthModule["HealthModule"]
+    FreeOffersModule["FreeOffersModule"]
+    SecurityModule["SecurityModule"]
     DatabaseModule["DatabaseModule"]
     PrismaModule["PrismaModule"]
     EpicAccountsModule["EpicAccountsModule"]
     EpicGamesModule["EpicGamesModule"]
 
     HealthController["HealthController\nGET /api/health"]
+    FreeOffersController["FreeOffersController\nGET /api/free-offers"]
+    EpicSyncController["EpicSyncController\ninternal sync endpoints"]
     HealthService["HealthService"]
+    InternalApiKeyGuard["InternalApiKeyGuard\nx-api-key"]
     PrismaService["PrismaService\nPrisma 7 + PostgreSQL adapter"]
     EpicAccountConnection["EpicAccountConnectionService\nhashed one-time state"]
     EpicClient["EpicGamesClientService\nfetch + normalize promotions"]
@@ -52,20 +57,26 @@ flowchart TB
 
   Web --> Api
   AppModule --> HealthModule
+  AppModule --> FreeOffersModule
+  AppModule --> SecurityModule
   AppModule --> DatabaseModule
   AppModule --> EpicAccountsModule
   AppModule --> EpicGamesModule
   DatabaseModule --> PrismaModule
   PrismaModule --> PrismaService
   HealthModule --> HealthController
+  FreeOffersModule --> FreeOffersController
   HealthController --> HealthService
   HealthService --> PrismaService
+  SecurityModule --> InternalApiKeyGuard
   EpicAccountsModule --> EpicAccountConnection
   EpicAccountConnection --> PrismaService
   EpicGamesModule --> EpicClient
   EpicGamesModule --> EpicCheckout
   EpicGamesModule --> EpicSync
   EpicGamesModule --> EpicOwnershipSync
+  EpicGamesModule --> EpicSyncController
+  EpicSyncController --> InternalApiKeyGuard
   EpicSync --> EpicClient
   EpicSync --> EpicCheckout
   EpicOwnershipSync --> PrismaService
@@ -108,6 +119,8 @@ Epic Games is the first implementation target. Its service foundation currently 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 
 Epic ownership synchronization currently accepts normalized ownership metadata and persists it for an active Epic `ConnectedAccount`. It does not fetch private Epic library data or store credentials; authenticated library retrieval remains blocked on a reviewed auth/session design.
+
+Public read endpoints are separated from internal sync endpoints. Internal sync endpoints require the `x-api-key` header to match `INTERNAL_API_KEY`; if the key is missing from configuration, the endpoints deny access.
 
 ## Future Integrations
 

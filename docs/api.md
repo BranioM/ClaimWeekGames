@@ -107,32 +107,49 @@ Example response:
 {
   "syncJobId": "sync-job-id",
   "storeId": "store-id",
+  "source": "manual",
   "offersSeen": 2,
   "offersSynced": 2,
   "gamesCreated": 2,
+  "gamesUpdated": 0,
   "externalIdsCreated": 2,
+  "externalIdsUpdated": 0,
   "offersCreated": 1,
   "offersUpdated": 1,
   "checkoutUrl": "https://www.epicgames.com/store/purchase?offers=...",
-  "syncedAt": "2026-07-04T00:00:00.000Z"
+  "syncedAt": "2026-07-04T00:00:00.000Z",
+  "durationMs": 1234
 }
 ```
 
 SyncJob metadata includes:
 
+- `source` (`manual` or `scheduled`)
 - `offersSeen`
 - `offersSynced`
 - `gamesCreated`
+- `gamesUpdated`
 - `externalIdsCreated`
+- `externalIdsUpdated`
 - `offersCreated`
 - `offersUpdated`
+- `startedAt`
+- `finishedAt`
+- `durationMs`
 - `checkoutUrl`
 
 ### `GET /api/internal/sync-jobs`
 
 Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
 
-Returns recent synchronization jobs for operational visibility.
+Returns recent synchronization jobs for operational visibility. Results are newest first.
+
+Optional query parameters:
+
+- `status`: one of `PENDING`, `RUNNING`, `SUCCEEDED`, or `FAILED`
+- `jobType`: exact job type such as `EPIC_WEEKLY_FREE_OFFERS`
+- `store`: store ID or exact store name such as `Epic Games Store`
+- `limit`: positive integer, defaults to 50 and caps at 100
 
 Example response:
 
@@ -145,12 +162,16 @@ Example response:
     "startedAt": "2026-07-04T00:00:00.000Z",
     "finishedAt": "2026-07-04T00:01:00.000Z",
     "metadata": {
+      "source": "scheduled",
       "offersSeen": 2,
       "offersSynced": 2,
       "gamesCreated": 2,
+      "gamesUpdated": 0,
       "externalIdsCreated": 2,
+      "externalIdsUpdated": 0,
       "offersCreated": 1,
-      "offersUpdated": 1
+      "offersUpdated": 1,
+      "durationMs": 1234
     },
     "createdAt": "2026-07-04T00:00:00.000Z",
     "updatedAt": "2026-07-04T00:01:00.000Z",
@@ -261,9 +282,10 @@ Persists Epic free offers into:
 
 Sync behavior:
 
-- creates a `RUNNING` `SyncJob` before fetching Epic data.
+- creates a `PENDING` `SyncJob` before fetching Epic data.
+- marks the job `RUNNING` with `startedAt`.
 - updates the job to `SUCCEEDED` with offer and creation/update counts on success.
-- updates the job to `FAILED` with `error` on failure.
+- updates the job to `FAILED` with a sanitized `error` on failure.
 - uses upserts so repeated weekly sync runs are idempotent for the same offer window.
 
 ### `EpicFreeOffersSchedulerService`
@@ -274,11 +296,19 @@ Schedule:
 
 - Queue: `epic-sync`
 - Job name: `epic.free-offers.sync`
-- Cron: `0 18 * * 4`
-- Time zone: `Europe/Bratislava`
+- Default cron: `0 18 * * 4`
+- Default time zone: `Europe/Bratislava`
 - Human schedule: every Thursday at 18:00 Europe/Bratislava time
 - Retry policy: 3 attempts with exponential backoff starting at 60 seconds
 - Retention: keep the latest 100 completed jobs and 500 failed jobs in Redis
+
+Configuration:
+
+- `EPIC_FREE_OFFERS_SYNC_ENABLED=true|false`
+- `EPIC_FREE_OFFERS_SYNC_CRON`
+- `EPIC_FREE_OFFERS_SYNC_TIMEZONE`
+
+If `EPIC_FREE_OFFERS_SYNC_ENABLED` is not set, registration is enabled outside `test` and `production`. In `NODE_ENV=test`, the API does not import scheduler infrastructure unless `EPIC_FREE_OFFERS_SYNC_ENABLED=true`.
 
 The scheduled job delegates to `EpicGamesSyncService`, so every scheduled run creates and completes or fails a `SyncJob` record in PostgreSQL.
 
@@ -289,6 +319,7 @@ Consumes the BullMQ scheduled job and runs Epic free-offer synchronization.
 Failure behavior:
 
 - logs the failed BullMQ job ID.
+- logs sanitized error messages only.
 - rethrows sync failures so BullMQ applies the retry policy.
 - relies on `EpicGamesSyncService` to mark the related PostgreSQL `SyncJob` as `FAILED`.
 
@@ -300,6 +331,7 @@ Security constraints:
 
 - only exposed through `InternalApiKeyGuard`.
 - returns status and metadata, not secrets.
+- supports status, job type, store, and limit filters.
 
 ### `EpicOwnershipSyncService`
 

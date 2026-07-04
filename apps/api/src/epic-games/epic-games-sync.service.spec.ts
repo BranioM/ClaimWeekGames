@@ -60,35 +60,58 @@ describe('EpicGamesSyncService', () => {
     await expect(service.syncFreeGames()).resolves.toMatchObject({
       syncJobId: 'sync-job-1',
       storeId: 'store-1',
+      source: 'manual',
       offersSeen: 1,
       offersSynced: 1,
       gamesCreated: 1,
+      gamesUpdated: 0,
       externalIdsCreated: 1,
+      externalIdsUpdated: 0,
       offersCreated: 1,
       offersUpdated: 0,
       checkoutUrl: 'https://example.com',
+      durationMs: expect.any(Number) as number,
     });
     expect(prisma.syncJob.create).toHaveBeenCalledWith({
       data: {
         jobType: 'EPIC_WEEKLY_FREE_OFFERS',
-        status: 'RUNNING',
+        status: 'PENDING',
         storeId: 'store-1',
+        metadata: {
+          source: 'manual',
+        },
+      },
+    });
+    expect(prisma.syncJob.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'sync-job-1' },
+      data: {
+        status: 'RUNNING',
         startedAt: expect.any(Date) as Date,
+        metadata: {
+          source: 'manual',
+          startedAt: expect.any(String) as string,
+        },
       },
     });
     expect(checkout.generateCheckoutUrl).toHaveBeenCalledWith(offers);
-    expect(prisma.syncJob.update).toHaveBeenCalledWith({
+    expect(prisma.syncJob.update).toHaveBeenNthCalledWith(2, {
       where: { id: 'sync-job-1' },
       data: {
         status: 'SUCCEEDED',
         finishedAt: expect.any(Date) as Date,
         metadata: {
+          source: 'manual',
           offersSeen: 1,
           offersSynced: 1,
           gamesCreated: 1,
+          gamesUpdated: 0,
           externalIdsCreated: 1,
+          externalIdsUpdated: 0,
           offersCreated: 1,
           offersUpdated: 0,
+          startedAt: expect.any(String) as string,
+          finishedAt: expect.any(String) as string,
+          durationMs: expect.any(Number) as number,
           checkoutUrl: 'https://example.com',
         },
       },
@@ -169,7 +192,9 @@ describe('EpicGamesSyncService', () => {
 
     await expect(service.syncFreeGames()).resolves.toMatchObject({
       gamesCreated: 0,
+      gamesUpdated: 1,
       externalIdsCreated: 0,
+      externalIdsUpdated: 1,
       offersCreated: 0,
       offersUpdated: 1,
     });
@@ -179,7 +204,9 @@ describe('EpicGamesSyncService', () => {
           status: 'SUCCEEDED',
           metadata: expect.objectContaining({
             gamesCreated: 0,
+            gamesUpdated: 1,
             externalIdsCreated: 0,
+            externalIdsUpdated: 1,
             offersCreated: 0,
             offersUpdated: 1,
           }) as unknown,
@@ -218,13 +245,21 @@ describe('EpicGamesSyncService', () => {
     const service = module.get(EpicGamesSyncService);
 
     await expect(service.syncFreeGames()).rejects.toThrow('Epic unavailable');
-    expect(prisma.syncJob.update).toHaveBeenCalledWith({
-      where: { id: 'sync-job-1' },
-      data: {
-        status: 'FAILED',
-        finishedAt: expect.any(Date) as Date,
-        error: 'Epic unavailable',
-      },
-    });
+    expect(prisma.syncJob.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'sync-job-1' },
+        data: expect.objectContaining({
+          status: 'FAILED',
+          finishedAt: expect.any(Date) as Date,
+          error: 'Epic unavailable',
+          metadata: expect.objectContaining({
+            source: 'manual',
+            startedAt: expect.any(String) as string,
+            finishedAt: expect.any(String) as string,
+            durationMs: expect.any(Number) as number,
+          }) as unknown,
+        }) as unknown,
+      }),
+    );
   });
 });

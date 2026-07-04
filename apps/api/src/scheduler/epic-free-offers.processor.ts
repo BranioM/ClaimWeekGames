@@ -22,7 +22,7 @@ export class EpicFreeOffersProcessor extends WorkerHost {
     }
 
     try {
-      const result = await this.epicGamesSyncService.syncFreeGames();
+      const result = await this.epicGamesSyncService.syncFreeGames('scheduled');
 
       this.logger.log(
         `Completed scheduled Epic free-offer sync with SyncJob ${result.syncJobId}`,
@@ -32,10 +32,24 @@ export class EpicFreeOffersProcessor extends WorkerHost {
     } catch (error) {
       this.logger.error(
         `Scheduled Epic free-offer sync failed for BullMQ job ${job.id ?? 'unknown'}`,
-        error instanceof Error ? error.stack : undefined,
+        getSafeLogMessage(error),
       );
 
       throw error;
     }
   }
+}
+
+function getSafeLogMessage(error: unknown): string {
+  const message =
+    error instanceof Error ? error.message : 'Unknown Epic sync failure';
+
+  return message
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED]')
+    .replace(
+      /(token|password|secret|cookie|api[_-]?key)=([^&\s]+)/gi,
+      '$1=[REDACTED]',
+    )
+    .replace(/[\r\n\t]+/g, ' ')
+    .slice(0, 500);
 }

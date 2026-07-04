@@ -14,11 +14,13 @@ The backend foundation is implemented and verified:
 - Health endpoint with database probe.
 - Public active free-offer endpoint.
 - Internal Epic weekly free-offer sync with `SyncJob` tracking.
+- Redis-backed scheduled Epic weekly free-offer sync.
+- Internal sync-job visibility endpoint with status/job/store filters.
 - Internal Epic ownership sync endpoint.
 - Epic account connection foundation using one-time hashed state values.
 - Opaque bearer session foundation using hashed `UserSession` records.
 - Store-based domain model for digital game stores.
-- `SyncJob` schema for future synchronization tracking.
+- `SyncJob` records for manual and scheduled synchronization tracking.
 - API e2e coverage for health, public offers, authenticated identity, and internal guard boundaries.
 
 ## Stack
@@ -79,13 +81,13 @@ npx prisma migrate deploy
 Run the API in development mode:
 
 ```sh
-PORT=3002 npm run start:dev --workspace api
+npm run start:dev --workspace api
 ```
 
 Check health:
 
 ```sh
-curl http://localhost:3002/api/health
+curl http://localhost:3001/api/health
 ```
 
 Expected response shape:
@@ -117,6 +119,29 @@ npx prisma validate
 npx prisma migrate status
 ```
 
+## Scheduler Configuration
+
+Epic weekly free-offer tracking is scheduled through BullMQ and Redis.
+
+Default schedule:
+
+- Queue: `epic-sync`
+- Job: `epic.free-offers.sync`
+- Cron: `0 18 * * 4`
+- Time zone: `Europe/Bratislava`
+- Human schedule: every Thursday at 18:00 Europe/Bratislava time
+
+Environment variables:
+
+```sh
+EPIC_FREE_OFFERS_SYNC_ENABLED=true
+EPIC_FREE_OFFERS_SYNC_CRON="0 18 * * 4"
+EPIC_FREE_OFFERS_SYNC_TIMEZONE="Europe/Bratislava"
+REDIS_URL="redis://localhost:6379"
+```
+
+If `EPIC_FREE_OFFERS_SYNC_ENABLED` is not set, scheduler registration is enabled outside `test` and `production`. Tests do not register scheduled jobs unless explicitly enabled. Set `EPIC_FREE_OFFERS_SYNC_ENABLED=false` to disable local registration while keeping the manual internal sync endpoint available.
+
 ## Documentation
 
 Maintained project documents:
@@ -143,6 +168,7 @@ Current backend modules:
 - `FreeOffersModule`
 - `EpicAccountsModule`
 - `EpicGamesModule`
+- `SchedulerModule`
 
 Epic Games is the first store integration. Future integrations should follow the same module pattern for Steam, GOG, Xbox, Amazon Games, Ubisoft Connect, and EA App.
 

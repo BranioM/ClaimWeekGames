@@ -51,7 +51,7 @@ flowchart TB
     EpicCheckout["EpicGamesCheckoutService\nuser-assisted checkout URL"]
     EpicSync["EpicGamesSyncService\nupsert games, IDs, offers"]
     EpicOwnershipSync["EpicOwnershipSyncService\nmetadata-only owned games sync"]
-    EpicScheduler["EpicFreeOffersSchedulerService\nThursday 18:00 Bratislava"]
+    EpicScheduler["EpicFreeOffersSchedulerService\nconfigurable Thursday 18:00 Bratislava"]
     EpicProcessor["EpicFreeOffersProcessor\nBullMQ worker"]
   end
 
@@ -133,18 +133,19 @@ This model supports duplicate detection by normalizing games while preserving st
 Store synchronization should follow a consistent pipeline:
 
 1. Resolve or create the `Store`.
-2. Create a `RUNNING` `SyncJob`.
-3. Fetch store data from the integration source.
-4. Normalize external game and offer metadata into internal types.
-5. Match or create `Game` records using stable identifiers and normalized slugs.
-6. Upsert `ExternalGameId` and `FreeGameOffer` records for weekly and historical offers.
-7. Upsert `Ownership` records for authenticated user libraries.
-8. Mark the `SyncJob` as `SUCCEEDED` or `FAILED`.
-9. Emit domain events for notifications and downstream processing.
+2. Create a `PENDING` `SyncJob`.
+3. Mark the `SyncJob` as `RUNNING` with `startedAt`.
+4. Fetch store data from the integration source.
+5. Normalize external game and offer metadata into internal types.
+6. Match or create `Game` records using stable identifiers and normalized slugs.
+7. Upsert `ExternalGameId` and `FreeGameOffer` records for weekly and historical offers.
+8. Upsert `Ownership` records for authenticated user libraries.
+9. Mark the `SyncJob` as `SUCCEEDED` or `FAILED`.
+10. Emit domain events for notifications and downstream processing.
 
-Epic Games is the first implementation target. Its weekly free-offer sync currently ensures the Epic Games Store exists, records a `SyncJob`, fetches current/upcoming promotions, normalizes games, upserts external IDs and free-offer windows, and stores creation/update counters in job metadata.
+Epic Games is the first implementation target. Its weekly free-offer sync currently ensures the Epic Games Store exists, records a `SyncJob`, fetches current/upcoming promotions, normalizes games, upserts external IDs and free-offer windows, and stores source, timing, duration, and creation/update counters in job metadata.
 
-The scheduled Epic free-offer path uses BullMQ backed by Redis. `SchedulerModule` registers a repeatable `epic.free-offers.sync` job on the `epic-sync` queue for every Thursday at 18:00 Europe/Bratislava time. The processor delegates to the same `EpicGamesSyncService` used by the manual internal endpoint, so manual and automated runs share persistence, idempotency, `SyncJob` creation, failure recording, and result counters.
+The scheduled Epic free-offer path uses BullMQ backed by Redis. `SchedulerModule` registers a repeatable `epic.free-offers.sync` job on the `epic-sync` queue for every Thursday at 18:00 Europe/Bratislava time by default. The schedule can be changed with `EPIC_FREE_OFFERS_SYNC_CRON` and `EPIC_FREE_OFFERS_SYNC_TIMEZONE`, and registration can be controlled with `EPIC_FREE_OFFERS_SYNC_ENABLED`. In `NODE_ENV=test`, scheduler infrastructure is not imported unless explicitly enabled. The processor delegates to the same `EpicGamesSyncService` used by the manual internal endpoint, so manual and automated runs share persistence, idempotency, `SyncJob` creation, failure recording, and result counters.
 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 

@@ -17,6 +17,8 @@ Implemented safeguards:
 - Epic free-game fetch allows only known Epic promotion hosts.
 - Epic free-game fetch has an explicit timeout.
 - Epic promotion JSON is parsed defensively.
+- Scheduled Epic sync uses the same credential-free Epic free-offer path as manual sync.
+- Scheduled sync failure logs use sanitized error messages and avoid stack traces.
 - Claiming is user-assisted through Epic checkout links, not automated purchase.
 - Epic ownership sync is metadata-only and does not fetch private Epic library data.
 - Ownership sync does not delete missing ownerships automatically.
@@ -124,6 +126,9 @@ Use environment variables for:
 - `DATABASE_URL`
 - `REDIS_URL`
 - `INTERNAL_API_KEY`
+- `EPIC_FREE_OFFERS_SYNC_ENABLED`
+- `EPIC_FREE_OFFERS_SYNC_CRON`
+- `EPIC_FREE_OFFERS_SYNC_TIMEZONE`
 - future OAuth client secrets
 - future encryption keys
 

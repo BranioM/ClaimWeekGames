@@ -10,6 +10,12 @@ import { SchedulerModule } from './scheduler/scheduler.module.js';
 import { SecurityModule } from './security/security.module.js';
 import { SyncJobsModule } from './sync-jobs/sync-jobs.module.js';
 
+const schedulerImports =
+  process.env.NODE_ENV === 'test' &&
+  process.env.EPIC_FREE_OFFERS_SYNC_ENABLED !== 'true'
+    ? []
+    : [SchedulerModule];
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,7 +29,7 @@ import { SyncJobsModule } from './sync-jobs/sync-jobs.module.js';
     SyncJobsModule,
     EpicAccountsModule,
     EpicGamesModule,
-    SchedulerModule,
+    ...schedulerImports,
   ],
 })
 export class AppModule {}

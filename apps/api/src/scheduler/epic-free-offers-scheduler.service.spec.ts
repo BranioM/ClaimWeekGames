@@ -12,7 +12,13 @@ describe('EpicFreeOffersSchedulerService', () => {
     const queue = {
       add: jest.fn().mockResolvedValue({ id: 'repeat-job-1' }),
     };
-    const service = new EpicFreeOffersSchedulerService(queue as never);
+    const config = {
+      get: jest.fn().mockReturnValue(undefined),
+    };
+    const service = new EpicFreeOffersSchedulerService(
+      queue as never,
+      config as never,
+    );
 
     await service.registerWeeklySync();
 
@@ -33,6 +39,58 @@ describe('EpicFreeOffersSchedulerService', () => {
         removeOnComplete: 100,
         removeOnFail: 500,
       },
+    );
+  });
+
+  it('does not register scheduled jobs in tests unless explicitly enabled', async () => {
+    const queue = {
+      add: jest.fn(),
+    };
+    const config = {
+      get: jest.fn((key: string) => (key === 'NODE_ENV' ? 'test' : undefined)),
+    };
+    const service = new EpicFreeOffersSchedulerService(
+      queue as never,
+      config as never,
+    );
+
+    await service.onModuleInit();
+
+    expect(queue.add).not.toHaveBeenCalled();
+  });
+
+  it('uses scheduler environment overrides', async () => {
+    const queue = {
+      add: jest.fn().mockResolvedValue({ id: 'repeat-job-1' }),
+    };
+    const config = {
+      get: jest.fn((key: string) => {
+        if (key === 'EPIC_FREE_OFFERS_SYNC_CRON') {
+          return '5 19 * * 4';
+        }
+        if (key === 'EPIC_FREE_OFFERS_SYNC_TIMEZONE') {
+          return 'UTC';
+        }
+
+        return undefined;
+      }),
+    };
+    const service = new EpicFreeOffersSchedulerService(
+      queue as never,
+      config as never,
+    );
+
+    await service.registerWeeklySync();
+
+    expect(queue.add).toHaveBeenCalledWith(
+      EPIC_FREE_OFFERS_SYNC_JOB,
+      {},
+      expect.objectContaining({
+        repeat: {
+          pattern: '5 19 * * 4',
+          tz: 'UTC',
+        },
+      }),
     );
   });
 });

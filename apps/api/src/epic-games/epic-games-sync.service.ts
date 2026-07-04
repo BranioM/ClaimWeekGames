@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EpicGamesCheckoutService } from './epic-games-checkout.service.js';
 import { EpicGamesClientService } from './epic-games-client.service.js';
-import { EpicGamesOffer, EpicGamesSyncResult } from './epic-games.types.js';
+import {
+  EpicGamesOffer,
+  EpicGamesSyncResult,
+  EpicGamesSyncSource,
+} from './epic-games.types.js';
 
 @Injectable()
 export class EpicGamesSyncService {
@@ -16,7 +20,9 @@ export class EpicGamesSyncService {
     private readonly epicGamesCheckout: EpicGamesCheckoutService,
   ) {}
 
-  async syncFreeGames(): Promise<EpicGamesSyncResult> {
+  async syncFreeGames(
+    source: EpicGamesSyncSource = 'manual',
+  ): Promise<EpicGamesSyncResult> {
     const store = await this.prisma.store.upsert({
       where: { name: this.epicStoreName },
       create: { name: this.epicStoreName },
@@ -25,9 +31,24 @@ export class EpicGamesSyncService {
     const syncJob = await this.prisma.syncJob.create({
       data: {
         jobType: this.weeklyFreeOffersJobType,
-        status: 'RUNNING',
+        status: 'PENDING',
         storeId: store.id,
-        startedAt: new Date(),
+        metadata: {
+          source,
+        },
+      },
+    });
+    const startedAt = new Date();
+
+    await this.prisma.syncJob.update({
+      where: { id: syncJob.id },
+      data: {
+        status: 'RUNNING',
+        startedAt,
+        metadata: {
+          source,
+          startedAt: startedAt.toISOString(),
+        },
       },
     });
 
@@ -36,7 +57,9 @@ export class EpicGamesSyncService {
       const counters = {
         offersSynced: 0,
         gamesCreated: 0,
+        gamesUpdated: 0,
         externalIdsCreated: 0,
+        externalIdsUpdated: 0,
         offersCreated: 0,
         offersUpdated: 0,
       };
@@ -45,13 +68,16 @@ export class EpicGamesSyncService {
         const result = await this.upsertOffer(store.id, offer);
         counters.offersSynced += 1;
         counters.gamesCreated += result.gameCreated ? 1 : 0;
+        counters.gamesUpdated += result.gameUpdated ? 1 : 0;
         counters.externalIdsCreated += result.externalIdCreated ? 1 : 0;
+        counters.externalIdsUpdated += result.externalIdUpdated ? 1 : 0;
         counters.offersCreated += result.offerCreated ? 1 : 0;
         counters.offersUpdated += result.offerUpdated ? 1 : 0;
       }
 
       const checkoutUrl = this.epicGamesCheckout.generateCheckoutUrl(offers);
       const syncedAt = new Date();
+      const durationMs = syncedAt.getTime() - startedAt.getTime();
 
       await this.prisma.syncJob.update({
         where: { id: syncJob.id },
@@ -59,12 +85,18 @@ export class EpicGamesSyncService {
           status: 'SUCCEEDED',
           finishedAt: syncedAt,
           metadata: {
+            source,
             offersSeen: offers.length,
             offersSynced: counters.offersSynced,
             gamesCreated: counters.gamesCreated,
+            gamesUpdated: counters.gamesUpdated,
             externalIdsCreated: counters.externalIdsCreated,
+            externalIdsUpdated: counters.externalIdsUpdated,
             offersCreated: counters.offersCreated,
             offersUpdated: counters.offersUpdated,
+            startedAt: startedAt.toISOString(),
+            finishedAt: syncedAt.toISOString(),
+            durationMs,
             checkoutUrl,
           },
         },
@@ -77,24 +109,40 @@ export class EpicGamesSyncService {
       return {
         syncJobId: syncJob.id,
         storeId: store.id,
+        source,
         offersSeen: offers.length,
         offersSynced: counters.offersSynced,
         gamesCreated: counters.gamesCreated,
+        gamesUpdated: counters.gamesUpdated,
         externalIdsCreated: counters.externalIdsCreated,
+        externalIdsUpdated: counters.externalIdsUpdated,
         offersCreated: counters.offersCreated,
         offersUpdated: counters.offersUpdated,
         checkoutUrl,
         syncedAt: syncedAt.toISOString(),
+        durationMs,
       };
     } catch (error) {
+      const finishedAt = new Date();
+      const durationMs = finishedAt.getTime() - startedAt.getTime();
+      const sanitizedError = getSanitizedErrorMessage(error);
+
       await this.prisma.syncJob.update({
         where: { id: syncJob.id },
         data: {
           status: 'FAILED',
-          finishedAt: new Date(),
-          error: getErrorMessage(error),
+          finishedAt,
+          error: sanitizedError,
+          metadata: {
+            source,
+            startedAt: startedAt.toISOString(),
+            finishedAt: finishedAt.toISOString(),
+            durationMs,
+          },
         },
       });
+
+      this.logger.error(`Epic Games free-offer sync failed: ${sanitizedError}`);
 
       throw error;
     }
@@ -184,13 +232,25 @@ export class EpicGamesSyncService {
 
     return {
       gameCreated: !existingGame,
+      gameUpdated: Boolean(existingGame),
       externalIdCreated: !existingExternalId,
+      externalIdUpdated: Boolean(existingExternalId),
       offerCreated: !existingOffer,
       offerUpdated: Boolean(existingOffer),
     };
   }
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Unknown Epic sync failure';
+function getSanitizedErrorMessage(error: unknown): string {
+  const message =
+    error instanceof Error ? error.message : 'Unknown Epic sync failure';
+
+  return message
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED]')
+    .replace(
+      /(token|password|secret|cookie|api[_-]?key)=([^&\s]+)/gi,
+      '$1=[REDACTED]',
+    )
+    .replace(/[\r\n\t]+/g, ' ')
+    .slice(0, 500);
 }

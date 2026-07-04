@@ -13,11 +13,19 @@ describe('SyncJobsController', () => {
     };
     const controller = new SyncJobsController(service as never);
 
-    await expect(controller.listRecentSyncJobs()).resolves.toEqual([
-      {
-        id: 'sync-job-1',
+    await expect(
+      controller.listRecentSyncJobs({
         status: 'SUCCEEDED',
-      },
-    ]);
+        jobType: 'EPIC_WEEKLY_FREE_OFFERS',
+        store: 'Epic Games Store',
+        limit: '25',
+      }),
+    ).resolves.toEqual([{ id: 'sync-job-1', status: 'SUCCEEDED' }]);
+    expect(service.listRecentSyncJobs).toHaveBeenCalledWith({
+      status: 'SUCCEEDED',
+      jobType: 'EPIC_WEEKLY_FREE_OFFERS',
+      store: 'Epic Games Store',
+      limit: 25,
+    });
   });
 });

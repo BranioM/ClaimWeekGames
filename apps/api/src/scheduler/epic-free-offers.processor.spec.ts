@@ -22,7 +22,9 @@ describe('EpicFreeOffersProcessor', () => {
     ).resolves.toEqual({
       syncJobId: 'sync-job-1',
     });
-    expect(epicGamesSyncService.syncFreeGames).toHaveBeenCalledTimes(1);
+    expect(epicGamesSyncService.syncFreeGames).toHaveBeenCalledWith(
+      'scheduled',
+    );
   });
 
   it('rethrows failed syncs so BullMQ retry policy can run', async () => {
@@ -40,7 +42,9 @@ describe('EpicFreeOffersProcessor', () => {
         name: EPIC_FREE_OFFERS_SYNC_JOB,
       } as never),
     ).rejects.toThrow('Epic fetch failed');
-    expect(epicGamesSyncService.syncFreeGames).toHaveBeenCalledTimes(1);
+    expect(epicGamesSyncService.syncFreeGames).toHaveBeenCalledWith(
+      'scheduled',
+    );
   });
 
   it('creates a FAILED SyncJob when scheduled Epic fetch fails', async () => {
@@ -77,18 +81,28 @@ describe('EpicFreeOffersProcessor', () => {
     expect(prisma.syncJob.create).toHaveBeenCalledWith({
       data: {
         jobType: 'EPIC_WEEKLY_FREE_OFFERS',
-        status: 'RUNNING',
+        status: 'PENDING',
         storeId: 'store-1',
-        startedAt: expect.any(Date) as Date,
+        metadata: {
+          source: 'scheduled',
+        },
       },
     });
-    expect(prisma.syncJob.update).toHaveBeenCalledWith({
-      where: { id: 'sync-job-1' },
-      data: {
-        status: 'FAILED',
-        finishedAt: expect.any(Date) as Date,
-        error: 'Epic unavailable',
-      },
-    });
+    expect(prisma.syncJob.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'sync-job-1' },
+        data: expect.objectContaining({
+          status: 'FAILED',
+          finishedAt: expect.any(Date) as Date,
+          error: 'Epic unavailable',
+          metadata: expect.objectContaining({
+            source: 'scheduled',
+            startedAt: expect.any(String) as string,
+            finishedAt: expect.any(String) as string,
+            durationMs: expect.any(Number) as number,
+          }) as unknown,
+        }) as unknown,
+      }),
+    );
   });
 });

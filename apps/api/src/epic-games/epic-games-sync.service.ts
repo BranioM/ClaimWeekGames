@@ -7,6 +7,8 @@ import { EpicGamesOffer, EpicGamesSyncResult } from './epic-games.types.js';
 @Injectable()
 export class EpicGamesSyncService {
   private readonly logger = new Logger(EpicGamesSyncService.name);
+  private readonly epicStoreName = 'Epic Games Store';
+  private readonly weeklyFreeOffersJobType = 'EPIC_WEEKLY_FREE_OFFERS';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -15,28 +17,67 @@ export class EpicGamesSyncService {
   ) {}
 
   async syncFreeGames(): Promise<EpicGamesSyncResult> {
-    const offers = await this.epicGamesClient.getFreeGameOffers();
     const store = await this.prisma.store.upsert({
-      where: { name: 'Epic Games Store' },
-      create: { name: 'Epic Games Store' },
+      where: { name: this.epicStoreName },
+      create: { name: this.epicStoreName },
       update: {},
     });
-    let offersSynced = 0;
+    const syncJob = await this.prisma.syncJob.create({
+      data: {
+        jobType: this.weeklyFreeOffersJobType,
+        status: 'RUNNING',
+        storeId: store.id,
+        startedAt: new Date(),
+      },
+    });
 
-    for (const offer of offers) {
-      await this.upsertOffer(store.id, offer);
-      offersSynced += 1;
+    try {
+      const offers = await this.epicGamesClient.getFreeGameOffers();
+      let offersSynced = 0;
+
+      for (const offer of offers) {
+        await this.upsertOffer(store.id, offer);
+        offersSynced += 1;
+      }
+
+      const checkoutUrl = this.epicGamesCheckout.generateCheckoutUrl(offers);
+      const syncedAt = new Date();
+
+      await this.prisma.syncJob.update({
+        where: { id: syncJob.id },
+        data: {
+          status: 'SUCCEEDED',
+          finishedAt: syncedAt,
+          metadata: {
+            offersSeen: offers.length,
+            offersSynced,
+            checkoutUrl,
+          },
+        },
+      });
+
+      this.logger.log(`Synced ${offersSynced} Epic Games free-game offers`);
+
+      return {
+        syncJobId: syncJob.id,
+        storeId: store.id,
+        offersSeen: offers.length,
+        offersSynced,
+        checkoutUrl,
+        syncedAt: syncedAt.toISOString(),
+      };
+    } catch (error) {
+      await this.prisma.syncJob.update({
+        where: { id: syncJob.id },
+        data: {
+          status: 'FAILED',
+          finishedAt: new Date(),
+          error: getErrorMessage(error),
+        },
+      });
+
+      throw error;
     }
-
-    this.logger.log(`Synced ${offersSynced} Epic Games free-game offers`);
-
-    return {
-      storeId: store.id,
-      offersSeen: offers.length,
-      offersSynced,
-      checkoutUrl: this.epicGamesCheckout.generateCheckoutUrl(offers),
-      syncedAt: new Date().toISOString(),
-    };
   }
 
   private async upsertOffer(storeId: string, offer: EpicGamesOffer) {
@@ -99,4 +140,8 @@ export class EpicGamesSyncService {
       },
     });
   }
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown Epic sync failure';
 }

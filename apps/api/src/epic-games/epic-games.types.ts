@@ -10,6 +10,7 @@ export type EpicGamesOffer = {
 };
 
 export type EpicGamesSyncResult = {
+  syncJobId: string;
   storeId: string;
   offersSeen: number;
   offersSynced: number;

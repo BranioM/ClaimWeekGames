@@ -97,7 +97,20 @@ The raw token is returned once and is not stored.
 
 Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
 
-Runs Epic free-offer synchronization.
+Runs Epic weekly free-offer synchronization. The endpoint fetches current/upcoming Epic promotions, persists canonical games, external IDs, and free-offer windows, and records the run in `SyncJob`.
+
+Example response:
+
+```json
+{
+  "syncJobId": "sync-job-id",
+  "storeId": "store-id",
+  "offersSeen": 2,
+  "offersSynced": 2,
+  "checkoutUrl": "https://www.epicgames.com/store/purchase?offers=...",
+  "syncedAt": "2026-07-04T00:00:00.000Z"
+}
+```
 
 ### `POST /api/internal/epic/accounts/connection-state`
 
@@ -194,7 +207,14 @@ Persists Epic free offers into:
 - `Game`
 - `ExternalGameId`
 - `FreeGameOffer`
-- future `SyncJob` records once scheduling is implemented.
+- `SyncJob`
+
+Sync behavior:
+
+- creates a `RUNNING` `SyncJob` before fetching Epic data.
+- updates the job to `SUCCEEDED` with offer counts on success.
+- updates the job to `FAILED` with `error` on failure.
+- uses upserts so repeated weekly sync runs are idempotent for the same offer window.
 
 ### `EpicOwnershipSyncService`
 

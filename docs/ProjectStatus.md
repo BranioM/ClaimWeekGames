@@ -15,7 +15,7 @@
 - API starts in development mode.
 - `/api/health` returns API and database health.
 - Prisma migrations are applied locally.
-- Epic free-game offers can be fetched, normalized, and persisted by service code.
+- Epic weekly free-game offers can be fetched, normalized, persisted, and tracked with `SyncJob`.
 - Epic account connection state can be generated and consumed without storing raw state, passwords, or tokens.
 - Epic owned-game metadata can be persisted for an active connected account.
 - User-assisted Epic checkout URLs can be generated from free offers.

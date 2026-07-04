@@ -12,6 +12,7 @@ Completed:
 - Health endpoint with database probe.
 - Core data model for users, stores, games, connected accounts, ownership, external IDs, and free offers.
 - Epic free-offer synchronization foundation.
+- Epic weekly free-offer sync tracks success/failure with `SyncJob`.
 - Secure Epic account connection foundation using hashed one-time state.
 - Metadata-only Epic ownership sync persistence.
 - Public active free-offer endpoint.

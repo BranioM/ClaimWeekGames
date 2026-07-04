@@ -124,15 +124,17 @@ This model supports duplicate detection by normalizing games while preserving st
 
 Store synchronization should follow a consistent pipeline:
 
-1. Fetch store data from the integration source.
-2. Normalize external game and offer metadata into internal types.
-3. Resolve or create the `Store`.
-4. Match or create `Game` records using stable identifiers and normalized slugs.
-5. Upsert `FreeGameOffer` records for weekly and historical offers.
-6. Upsert `Ownership` records for authenticated user libraries.
-7. Emit domain events for notifications and downstream processing.
+1. Resolve or create the `Store`.
+2. Create a `RUNNING` `SyncJob`.
+3. Fetch store data from the integration source.
+4. Normalize external game and offer metadata into internal types.
+5. Match or create `Game` records using stable identifiers and normalized slugs.
+6. Upsert `ExternalGameId` and `FreeGameOffer` records for weekly and historical offers.
+7. Upsert `Ownership` records for authenticated user libraries.
+8. Mark the `SyncJob` as `SUCCEEDED` or `FAILED`.
+9. Emit domain events for notifications and downstream processing.
 
-Epic Games is the first implementation target. Its service foundation currently ensures the Epic Games Store exists and provides a place to add weekly offer, historical offer, owned game, multi-account, and duplicate-detection workflows.
+Epic Games is the first implementation target. Its weekly free-offer sync currently ensures the Epic Games Store exists, records a `SyncJob`, fetches current/upcoming promotions, normalizes games, and upserts external IDs and free-offer windows.
 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 

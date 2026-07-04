@@ -13,7 +13,8 @@ The backend foundation is implemented and verified:
 - Prisma 7 configured with additive migrations.
 - Health endpoint with database probe.
 - Public active free-offer endpoint.
-- Internal Epic free-offer and ownership sync endpoints.
+- Internal Epic weekly free-offer sync with `SyncJob` tracking.
+- Internal Epic ownership sync endpoint.
 - Epic account connection foundation using one-time hashed state values.
 - Opaque bearer session foundation using hashed `UserSession` records.
 - Store-based domain model for digital game stores.

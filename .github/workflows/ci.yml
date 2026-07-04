@@ -63,6 +63,10 @@ jobs:
         working-directory: apps/api
         run: npx prisma migrate deploy
 
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npx prisma generate
+
       - name: Lint API
         run: npm run lint --workspace api
 

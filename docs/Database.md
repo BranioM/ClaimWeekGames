@@ -13,10 +13,11 @@ User
     -> Ownership
       -> Game
 
-Platform
+Store
   -> ConnectedAccount
   -> FreeGameOffer
   -> ExternalGameId
+  -> SyncJob
 
 Game
   -> ExternalGameId
@@ -60,9 +61,9 @@ Security behavior:
 - only token hashes are stored.
 - expired or revoked sessions are rejected.
 
-### `Platform`
+### `Store`
 
-Digital store, currently used as the Store concept.
+Digital game store.
 
 Important fields:
 
@@ -72,12 +73,12 @@ Important fields:
 
 ### `ConnectedAccount`
 
-User's account on a platform.
+User's account on a store.
 
 Important fields:
 
 - `userId`
-- `platformId`
+- `storeId`
 - `accountKey`
 - `externalAccountId`
 - `displayName`
@@ -87,8 +88,8 @@ Important fields:
 
 Constraints:
 
-- unique `(userId, platformId, accountKey)`
-- unique `(platformId, externalAccountId)`
+- unique `(userId, storeId, accountKey)`
+- unique `(storeId, externalAccountId)`
 
 ### `AccountConnectionState`
 
@@ -100,12 +101,12 @@ Important fields:
 - `expiresAt`
 - `consumedAt`
 - `userId`
-- `platformId`
+- `storeId`
 
 Constraints:
 
 - unique `stateHash`
-- indexed `(userId, platformId, consumedAt, expiresAt)`
+- indexed `(userId, storeId, consumedAt, expiresAt)`
 
 ### `Game`
 
@@ -124,7 +125,7 @@ Maps store-specific game identifiers to canonical games.
 
 Constraints:
 
-- unique `(platformId, providerGameId)`
+- unique `(storeId, providerGameId)`
 
 ### `Ownership`
 
@@ -145,8 +146,29 @@ Represents a detected free-game offer window.
 
 Constraints:
 
-- unique `(platformId, externalOfferId)`
-- unique `(gameId, platformId, startDate, endDate)`
+- unique `(storeId, externalOfferId)`
+- unique `(gameId, storeId, startDate, endDate)`
+
+### `SyncJob`
+
+Represents a synchronization attempt or scheduled synchronization unit.
+
+Important fields:
+
+- `jobType`
+- `status`
+- `storeId`
+- `startedAt`
+- `finishedAt`
+- `errorMessage`
+- `metadata`
+- `createdAt`
+- `updatedAt`
+
+Constraints:
+
+- indexed `(status, createdAt)`
+- indexed `(storeId, jobType, createdAt)`
 
 ## Migration Policy
 

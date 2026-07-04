@@ -24,7 +24,7 @@ describe('EpicOwnershipSyncService', () => {
         findUnique: jest.fn().mockResolvedValue({
           id: 'account-1',
           status: 'DISCONNECTED',
-          platform: { name: 'Epic Games Store' },
+          store: { name: 'Epic Games Store' },
         }),
       },
     };
@@ -54,9 +54,9 @@ describe('EpicOwnershipSyncService', () => {
       connectedAccount: {
         findUnique: jest.fn().mockResolvedValue({
           id: 'account-1',
-          platformId: 'platform-1',
+          storeId: 'store-1',
           status: 'ACTIVE',
-          platform: { name: 'Epic Games Store' },
+          store: { name: 'Epic Games Store' },
         }),
       },
       $transaction: jest.fn(
@@ -90,8 +90,8 @@ describe('EpicOwnershipSyncService', () => {
     expect(tx.externalGameId.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          platformId_providerGameId: {
-            platformId: 'platform-1',
+          storeId_providerGameId: {
+            storeId: 'store-1',
             providerGameId: 'epic-game-1',
           },
         },

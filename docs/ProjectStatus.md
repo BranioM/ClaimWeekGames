@@ -22,6 +22,8 @@
 - Public active free-offer reads are available at `GET /api/free-offers`.
 - Authenticated user identity reads are available at `GET /api/me`.
 - Opaque session tokens are stored only as hashes in `UserSession`.
+- `Store` is the canonical domain model for digital game stores.
+- `SyncJob` schema exists for future scheduled synchronization tracking.
 - Internal Epic sync and account-connection endpoints are guarded by `x-api-key` and `INTERNAL_API_KEY`.
 - Internal session bootstrap is guarded by `x-api-key` and `INTERNAL_API_KEY`.
 - E2E tests cover health, public offers, authenticated user identity, and internal guard boundaries.
@@ -49,6 +51,7 @@ Last verified commands:
 ## Open Work
 
 - Scheduler module.
+- Services that create and execute `SyncJob` records.
 - Public signup/login or external identity-provider callback.
 - Session revocation endpoint.
 - Public user-authenticated account connection endpoints using `AuthenticatedUserGuard`.

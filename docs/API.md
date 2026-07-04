@@ -39,8 +39,8 @@ Example response:
       "developer": "Example Dev",
       "publisher": "Example Publisher"
     },
-    "platform": {
-      "id": "platform-id",
+    "store": {
+      "id": "store-id",
       "name": "Epic Games Store"
     }
   }
@@ -190,10 +190,11 @@ Security constraints:
 
 Persists Epic free offers into:
 
-- `Platform`
+- `Store`
 - `Game`
 - `ExternalGameId`
 - `FreeGameOffer`
+- future `SyncJob` records once scheduling is implemented.
 
 ### `EpicOwnershipSyncService`
 

@@ -28,7 +28,7 @@ describe('EpicAccountsController', () => {
       connectAccount: jest.fn().mockResolvedValue({
         id: 'account-1',
         userId: 'user-1',
-        platformId: 'platform-1',
+        storeId: 'store-1',
         externalAccountId: 'epic-user-1',
         displayName: 'Epic User',
       }),
@@ -45,7 +45,7 @@ describe('EpicAccountsController', () => {
     ).resolves.toEqual({
       id: 'account-1',
       userId: 'user-1',
-      platformId: 'platform-1',
+      storeId: 'store-1',
       externalAccountId: 'epic-user-1',
       displayName: 'Epic User',
     });

@@ -19,6 +19,8 @@ Completed:
 - Internal API-key guarded Epic account connection endpoints.
 - Opaque bearer session foundation with hashed `UserSession` records.
 - Expanded API e2e coverage for public endpoints, authenticated identity, and internal guard boundaries.
+- Store domain terminology replacing Platform.
+- SyncJob data model for future scheduled synchronization.
 
 ## Next Milestone: Auth and Public API Boundary
 
@@ -30,6 +32,7 @@ Scope:
 - Add session revocation endpoint.
 - Add user-scoped authorization guards where endpoints access owned records.
 - Design user-authenticated account-connection endpoints.
+- Add scheduler services that create and execute `SyncJob` records.
 - Keep sync endpoints internal/admin-only as the system grows beyond API-key protection.
 
 ## Later Milestones

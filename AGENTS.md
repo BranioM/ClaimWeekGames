@@ -159,7 +159,7 @@ Expected stores:
 
 A game may exist on multiple stores.
 
-Never assume ownership is unique to one platform.
+Never assume ownership is unique to one store.
 
 Track ownership separately from game metadata.
 

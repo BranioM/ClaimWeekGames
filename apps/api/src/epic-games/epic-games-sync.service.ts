@@ -16,7 +16,7 @@ export class EpicGamesSyncService {
 
   async syncFreeGames(): Promise<EpicGamesSyncResult> {
     const offers = await this.epicGamesClient.getFreeGameOffers();
-    const platform = await this.prisma.platform.upsert({
+    const store = await this.prisma.store.upsert({
       where: { name: 'Epic Games Store' },
       create: { name: 'Epic Games Store' },
       update: {},
@@ -24,14 +24,14 @@ export class EpicGamesSyncService {
     let offersSynced = 0;
 
     for (const offer of offers) {
-      await this.upsertOffer(platform.id, offer);
+      await this.upsertOffer(store.id, offer);
       offersSynced += 1;
     }
 
     this.logger.log(`Synced ${offersSynced} Epic Games free-game offers`);
 
     return {
-      platformId: platform.id,
+      storeId: store.id,
       offersSeen: offers.length,
       offersSynced,
       checkoutUrl: this.epicGamesCheckout.generateCheckoutUrl(offers),
@@ -39,7 +39,7 @@ export class EpicGamesSyncService {
     };
   }
 
-  private async upsertOffer(platformId: string, offer: EpicGamesOffer) {
+  private async upsertOffer(storeId: string, offer: EpicGamesOffer) {
     const game = await this.prisma.game.upsert({
       where: { slug: offer.slug },
       create: {
@@ -57,13 +57,13 @@ export class EpicGamesSyncService {
 
     await this.prisma.externalGameId.upsert({
       where: {
-        platformId_providerGameId: {
-          platformId,
+        storeId_providerGameId: {
+          storeId,
           providerGameId: offer.providerGameId,
         },
       },
       create: {
-        platformId,
+        storeId,
         gameId: game.id,
         providerGameId: offer.providerGameId,
       },
@@ -80,14 +80,14 @@ export class EpicGamesSyncService {
 
     await this.prisma.freeGameOffer.upsert({
       where: {
-        platformId_externalOfferId: {
-          platformId,
+        storeId_externalOfferId: {
+          storeId,
           externalOfferId,
         },
       },
       create: {
         externalOfferId,
-        platformId,
+        storeId,
         gameId: game.id,
         startDate: offer.startDate,
         endDate: offer.endDate,

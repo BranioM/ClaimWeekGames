@@ -14,9 +14,21 @@ Reason: the runtime failure was caused by mixed ESM/CommonJS output. A coherent 
 
 ## 2026-07-04: Model Store Accounts Explicitly
 
-Decision: represent multi-account support with `ConnectedAccount` between `User` and `Ownership`.
+Decision: represent multi-account support with `ConnectedAccount` between `User`, `Store`, and `Ownership`.
 
 Reason: a user can have multiple accounts per store, and a game may be owned on multiple accounts or stores. Ownership must attach to the connected account, not directly to the user/store pair.
+
+## 2026-07-04: Rename Platform to Store
+
+Decision: use `Store` as the canonical domain term instead of `Platform`.
+
+Reason: ClaimWeekGames integrates digital game stores. `Store` is clearer than `Platform` for account connections, free offers, ownership metadata, and future store modules.
+
+## 2026-07-04: Track Synchronization Work With SyncJob
+
+Decision: add `SyncJob` as the durable record for synchronization attempts.
+
+Reason: synchronization will become scheduled, observable, and retryable. A first-class job record gives the scheduler, notifications, and support tooling a shared source of truth for status, timing, scoped store, and error metadata.
 
 ## 2026-07-04: Do Not Store Epic Passwords
 

@@ -35,8 +35,8 @@ describe('AppController (e2e)', () => {
                 developer: null,
                 publisher: 'Example Publisher',
               },
-              platform: {
-                id: 'platform-1',
+              store: {
+                id: 'store-1',
                 name: 'Epic Games Store',
               },
             },
@@ -110,8 +110,8 @@ describe('AppController (e2e)', () => {
               slug: 'example-game',
               publisher: 'Example Publisher',
             },
-            platform: {
-              id: 'platform-1',
+            store: {
+              id: 'store-1',
               name: 'Epic Games Store',
             },
           },

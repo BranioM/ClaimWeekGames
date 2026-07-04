@@ -19,8 +19,8 @@ describe('FreeOffersService', () => {
               developer: null,
               publisher: 'Example Publisher',
             },
-            platform: {
-              id: 'platform-1',
+            store: {
+              id: 'store-1',
               name: 'Epic Games Store',
             },
           },
@@ -45,8 +45,8 @@ describe('FreeOffersService', () => {
           developer: undefined,
           publisher: 'Example Publisher',
         },
-        platform: {
-          id: 'platform-1',
+        store: {
+          id: 'store-1',
           name: 'Epic Games Store',
         },
       },

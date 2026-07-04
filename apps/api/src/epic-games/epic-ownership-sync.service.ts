@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { slugify } from './slug.js';
 
-const EPIC_PLATFORM_NAME = 'Epic Games Store';
+const EPIC_STORE_NAME = 'Epic Games Store';
 
 export type EpicOwnedGame = {
   providerGameId: string;
@@ -30,12 +30,12 @@ export class EpicOwnershipSyncService {
   ): Promise<EpicOwnershipSyncResult> {
     const connectedAccount = await this.prisma.connectedAccount.findUnique({
       where: { id: connectedAccountId },
-      include: { platform: true },
+      include: { store: true },
     });
 
     if (
       !connectedAccount ||
-      connectedAccount.platform.name !== EPIC_PLATFORM_NAME ||
+      connectedAccount.store.name !== EPIC_STORE_NAME ||
       connectedAccount.status !== 'ACTIVE'
     ) {
       throw new BadRequestException(
@@ -65,13 +65,13 @@ export class EpicOwnershipSyncService {
 
         await tx.externalGameId.upsert({
           where: {
-            platformId_providerGameId: {
-              platformId: connectedAccount.platformId,
+            storeId_providerGameId: {
+              storeId: connectedAccount.storeId,
               providerGameId: ownedGame.providerGameId,
             },
           },
           create: {
-            platformId: connectedAccount.platformId,
+            storeId: connectedAccount.storeId,
             gameId: game.id,
             providerGameId: ownedGame.providerGameId,
           },

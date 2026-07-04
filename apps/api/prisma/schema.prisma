@@ -12,17 +12,17 @@ model User {
   email     String   @unique
   createdAt DateTime @default(now())
 
-  connectedAccounts ConnectedAccount[]
+  connectedAccounts       ConnectedAccount[]
   accountConnectionStates AccountConnectionState[]
-  sessions UserSession[]
+  sessions                UserSession[]
 }
 
 model UserSession {
-  id         String   @id @default(cuid())
-  tokenHash  String   @unique
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
   expiresAt  DateTime
   revokedAt  DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   lastUsedAt DateTime?
 
   userId String
@@ -32,15 +32,16 @@ model UserSession {
   @@index([userId, revokedAt, expiresAt])
 }
 
-model Platform {
+model Store {
   id        String   @id @default(cuid())
   name      String   @unique
   createdAt DateTime @default(now())
 
-  connectedAccounts ConnectedAccount[]
+  connectedAccounts       ConnectedAccount[]
   accountConnectionStates AccountConnectionState[]
-  externalGameIds ExternalGameId[]
-  offers          FreeGameOffer[]
+  externalGameIds         ExternalGameId[]
+  offers                  FreeGameOffer[]
+  syncJobs                SyncJob[]
 }
 
 model Game {
@@ -62,51 +63,51 @@ model ExternalGameId {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  gameId     String
-  platformId String
+  gameId  String
+  storeId String
 
-  game     Game     @relation(fields: [gameId], references: [id])
-  platform Platform @relation(fields: [platformId], references: [id])
+  game  Game  @relation(fields: [gameId], references: [id])
+  store Store @relation(fields: [storeId], references: [id])
 
-  @@unique([platformId, providerGameId])
+  @@unique([storeId, providerGameId])
 }
 
 model ConnectedAccount {
-  id                String   @id @default(cuid())
+  id                String                 @id @default(cuid())
   accountKey        String
   externalAccountId String?
   displayName       String?
   status            ConnectedAccountStatus @default(ACTIVE)
   lastSyncedAt      DateTime?
   disconnectedAt    DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 
-  userId     String
-  platformId String
+  userId  String
+  storeId String
 
   user       User        @relation(fields: [userId], references: [id])
-  platform   Platform    @relation(fields: [platformId], references: [id])
+  store      Store       @relation(fields: [storeId], references: [id])
   ownerships Ownership[]
 
-  @@unique([userId, platformId, accountKey])
-  @@unique([platformId, externalAccountId])
+  @@unique([userId, storeId, accountKey])
+  @@unique([storeId, externalAccountId])
 }
 
 model AccountConnectionState {
-  id         String   @id @default(cuid())
-  stateHash  String   @unique
+  id         String    @id @default(cuid())
+  stateHash  String    @unique
   expiresAt  DateTime
   consumedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
-  userId     String
-  platformId String
+  userId  String
+  storeId String
 
-  user     User     @relation(fields: [userId], references: [id])
-  platform Platform @relation(fields: [platformId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  store Store @relation(fields: [storeId], references: [id])
 
-  @@index([userId, platformId, consumedAt, expiresAt])
+  @@index([userId, storeId, consumedAt, expiresAt])
 }
 
 enum ConnectedAccountStatus {
@@ -136,12 +137,38 @@ model FreeGameOffer {
   endDate         DateTime
   detectedAt      DateTime @default(now())
 
-  gameId     String
-  platformId String
+  gameId  String
+  storeId String
 
-  game     Game     @relation(fields: [gameId], references: [id])
-  platform Platform @relation(fields: [platformId], references: [id])
+  game  Game  @relation(fields: [gameId], references: [id])
+  store Store @relation(fields: [storeId], references: [id])
 
-  @@unique([platformId, externalOfferId])
-  @@unique([gameId, platformId, startDate, endDate])
+  @@unique([storeId, externalOfferId])
+  @@unique([gameId, storeId, startDate, endDate])
+}
+
+model SyncJob {
+  id           String        @id @default(cuid())
+  jobType      String
+  status       SyncJobStatus @default(PENDING)
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  errorMessage String?
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  storeId String?
+
+  store Store? @relation(fields: [storeId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([storeId, jobType, createdAt])
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
 }

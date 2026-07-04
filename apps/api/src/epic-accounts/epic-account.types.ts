@@ -13,7 +13,7 @@ export type ConnectEpicAccountInput = {
 export type ConnectedEpicAccount = {
   id: string;
   userId: string;
-  platformId: string;
+  storeId: string;
   externalAccountId: string;
   displayName?: string;
 };

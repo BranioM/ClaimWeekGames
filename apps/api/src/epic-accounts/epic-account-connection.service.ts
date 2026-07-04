@@ -7,7 +7,7 @@ import {
   EpicAccountConnectionState,
 } from './epic-account.types.js';
 
-const EPIC_PLATFORM_NAME = 'Epic Games Store';
+const EPIC_STORE_NAME = 'Epic Games Store';
 const CONNECTION_STATE_TTL_MS = 10 * 60 * 1000;
 const STATE_BYTES = 32;
 
@@ -18,14 +18,14 @@ export class EpicAccountConnectionService {
   async createConnectionState(
     userId: string,
   ): Promise<EpicAccountConnectionState> {
-    const platform = await this.ensureEpicPlatform();
+    const store = await this.ensureEpicStore();
     const state = randomBytes(STATE_BYTES).toString('base64url');
     const expiresAt = new Date(Date.now() + CONNECTION_STATE_TTL_MS);
 
     await this.prisma.accountConnectionState.create({
       data: {
         userId,
-        platformId: platform.id,
+        storeId: store.id,
         stateHash: hashState(state),
         expiresAt,
       },
@@ -40,7 +40,7 @@ export class EpicAccountConnectionService {
   async connectAccount(
     input: ConnectEpicAccountInput,
   ): Promise<ConnectedEpicAccount> {
-    const platform = await this.ensureEpicPlatform();
+    const store = await this.ensureEpicStore();
     const stateHash = hashState(input.state);
     const now = new Date();
     const connectionState = await this.prisma.accountConnectionState.findUnique(
@@ -52,7 +52,7 @@ export class EpicAccountConnectionService {
     if (
       !connectionState ||
       connectionState.userId !== input.userId ||
-      connectionState.platformId !== platform.id ||
+      connectionState.storeId !== store.id ||
       connectionState.consumedAt ||
       connectionState.expiresAt <= now
     ) {
@@ -67,14 +67,14 @@ export class EpicAccountConnectionService {
 
       return tx.connectedAccount.upsert({
         where: {
-          platformId_externalAccountId: {
-            platformId: platform.id,
+          storeId_externalAccountId: {
+            storeId: store.id,
             externalAccountId: input.externalAccountId,
           },
         },
         create: {
           userId: input.userId,
-          platformId: platform.id,
+          storeId: store.id,
           accountKey: `epic:${input.externalAccountId}`,
           externalAccountId: input.externalAccountId,
           displayName: input.displayName,
@@ -94,16 +94,16 @@ export class EpicAccountConnectionService {
     return {
       id: connectedAccount.id,
       userId: connectedAccount.userId,
-      platformId: connectedAccount.platformId,
+      storeId: connectedAccount.storeId,
       externalAccountId: connectedAccount.externalAccountId ?? '',
       displayName: connectedAccount.displayName ?? undefined,
     };
   }
 
-  private ensureEpicPlatform() {
-    return this.prisma.platform.upsert({
-      where: { name: EPIC_PLATFORM_NAME },
-      create: { name: EPIC_PLATFORM_NAME },
+  private ensureEpicStore() {
+    return this.prisma.store.upsert({
+      where: { name: EPIC_STORE_NAME },
+      create: { name: EPIC_STORE_NAME },
       update: {},
     });
   }

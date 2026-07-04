@@ -57,7 +57,7 @@ flowchart TB
   end
 
   subgraph Data["Data Layer"]
-    Postgres["PostgreSQL\nUser -> UserSession\nUser -> ConnectedAccount -> Ownership -> Game\nStore/Platform -> FreeOffer"]
+    Postgres["PostgreSQL\nUser -> UserSession\nUser -> ConnectedAccount -> Ownership -> Game\nStore -> FreeOffer\nStore -> SyncJob"]
     Redis["Redis\nfuture scheduling/cache/events"]
   end
 
@@ -104,19 +104,20 @@ flowchart TB
 
 ## Data Model
 
-The current Prisma schema separates game metadata from ownership and store platforms:
+The current Prisma schema separates game metadata from ownership and stores:
 
 - `Game` stores canonical game metadata such as title, slug, developer, and publisher.
-- `Platform` stores digital stores such as Epic Games Store or Steam. It currently represents the Store concept.
+- `Store` stores digital stores such as Epic Games Store or Steam.
+- `SyncJob` records synchronization attempts, status, timing, store scope, and error metadata.
 - `User` stores application users.
 - `UserSession` stores hashed opaque bearer sessions for authenticated application access.
-- `ConnectedAccount` links a user to a platform account without storing credentials. This is the boundary for multi-account support.
+- `ConnectedAccount` links a user to a store account without storing credentials. This is the boundary for multi-account support.
 - `AccountConnectionState` stores a hashed, one-time, expiring state token used during account onboarding. Raw state values are returned to the caller but never persisted.
 - `Ownership` links a connected account to a game. Ownership is intentionally separate from `Game` because the same game can exist on multiple stores and multiple accounts.
-- `FreeGameOffer` tracks detected free-game windows per game and platform.
-- `ExternalGameId` maps platform-specific game identifiers to canonical `Game` records.
+- `FreeGameOffer` tracks detected free-game windows per game and store.
+- `ExternalGameId` maps store-specific game identifiers to canonical `Game` records.
 
-This model supports duplicate detection by normalizing games while preserving platform-specific ownership records.
+This model supports duplicate detection by normalizing games while preserving store-specific ownership records.
 
 ## Synchronization Flow
 
@@ -124,13 +125,13 @@ Store synchronization should follow a consistent pipeline:
 
 1. Fetch store data from the integration source.
 2. Normalize external game and offer metadata into internal types.
-3. Resolve or create the `Platform`.
+3. Resolve or create the `Store`.
 4. Match or create `Game` records using stable identifiers and normalized slugs.
 5. Upsert `FreeGameOffer` records for weekly and historical offers.
 6. Upsert `Ownership` records for authenticated user libraries.
 7. Emit domain events for notifications and downstream processing.
 
-Epic Games is the first implementation target. Its service foundation currently ensures the Epic Games Store platform exists and provides a place to add weekly offer, historical offer, owned game, multi-account, and duplicate-detection workflows.
+Epic Games is the first implementation target. Its service foundation currently ensures the Epic Games Store exists and provides a place to add weekly offer, historical offer, owned game, multi-account, and duplicate-detection workflows.
 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 

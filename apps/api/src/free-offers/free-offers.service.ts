@@ -14,7 +14,7 @@ export type FreeOfferView = {
     developer?: string;
     publisher?: string;
   };
-  platform: {
+  store: {
     id: string;
     name: string;
   };
@@ -33,7 +33,7 @@ export class FreeOffersService {
       },
       include: {
         game: true,
-        platform: true,
+        store: true,
       },
       orderBy: [{ startDate: 'asc' }, { detectedAt: 'desc' }],
     });
@@ -51,9 +51,9 @@ export class FreeOffersService {
         developer: offer.game.developer ?? undefined,
         publisher: offer.game.publisher ?? undefined,
       },
-      platform: {
-        id: offer.platform.id,
-        name: offer.platform.name,
+      store: {
+        id: offer.store.id,
+        name: offer.store.name,
       },
     }));
   }

@@ -16,6 +16,8 @@ The backend foundation is implemented and verified:
 - Internal Epic free-offer and ownership sync endpoints.
 - Epic account connection foundation using one-time hashed state values.
 - Opaque bearer session foundation using hashed `UserSession` records.
+- Store-based domain model for digital game stores.
+- `SyncJob` schema for future synchronization tracking.
 - API e2e coverage for health, public offers, authenticated identity, and internal guard boundaries.
 
 ## Stack

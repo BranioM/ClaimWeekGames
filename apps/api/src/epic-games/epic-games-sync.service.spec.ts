@@ -8,8 +8,8 @@ import { EpicGamesSyncService } from './epic-games-sync.service.js';
 describe('EpicGamesSyncService', () => {
   it('persists normalized free-game offers', async () => {
     const prisma = {
-      platform: {
-        upsert: jest.fn().mockResolvedValue({ id: 'platform-1' }),
+      store: {
+        upsert: jest.fn().mockResolvedValue({ id: 'store-1' }),
       },
       game: {
         upsert: jest.fn().mockResolvedValue({ id: 'game-1' }),
@@ -50,7 +50,7 @@ describe('EpicGamesSyncService', () => {
     const service = module.get(EpicGamesSyncService);
 
     await expect(service.syncFreeGames()).resolves.toMatchObject({
-      platformId: 'platform-1',
+      storeId: 'store-1',
       offersSeen: 1,
       offersSynced: 1,
       checkoutUrl: 'https://example.com',
@@ -61,8 +61,8 @@ describe('EpicGamesSyncService', () => {
     expect(prisma.externalGameId.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          platformId_providerGameId: {
-            platformId: 'platform-1',
+          storeId_providerGameId: {
+            storeId: 'store-1',
             providerGameId: 'epic-game-1',
           },
         },
@@ -71,8 +71,8 @@ describe('EpicGamesSyncService', () => {
     expect(prisma.freeGameOffer.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          platformId_externalOfferId: {
-            platformId: 'platform-1',
+          storeId_externalOfferId: {
+            storeId: 'store-1',
             externalOfferId:
               'epic-game-1:2026-07-01T00:00:00.000Z:2026-07-08T00:00:00.000Z',
           },

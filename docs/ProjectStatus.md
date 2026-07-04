@@ -18,6 +18,7 @@
 - Epic free-game offers can be fetched, normalized, and persisted by service code.
 - Epic account connection state can be generated and consumed without storing raw state, passwords, or tokens.
 - User-assisted Epic checkout URLs can be generated from free offers.
+- GitHub Actions CI validates pull requests.
 
 ## Verification Baseline
 

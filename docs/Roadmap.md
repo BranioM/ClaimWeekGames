@@ -33,3 +33,4 @@ Scope:
 - Authenticated user model and session handling.
 - Additional stores: Steam, GOG, Xbox, Amazon Games, Ubisoft Connect, EA App.
 - Secure token storage if required, with encryption at rest and key rotation plan.
+- GitHub Actions deployment and release workflows.

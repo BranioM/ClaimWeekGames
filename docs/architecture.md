@@ -11,7 +11,7 @@ The backend is organized by feature modules. Controllers stay thin, services con
 - `AuthModule` owns opaque application sessions and authenticated-user request context.
 - `EpicAccountsModule` owns secure Epic account connection state and connected-account registration.
 - `EpicGamesModule` is the first store integration and the highest-priority synchronization path.
-- `SchedulerModule` owns Redis-backed BullMQ queue registration and scheduled store synchronization jobs.
+- `SchedulerModule` owns Nest Schedule registration and scheduled store synchronization jobs.
 - Future store modules should follow the same shape as Epic Games: one module per store, store-specific services, and shared library ownership handled outside the store module.
 
 Expected future modules include `SteamModule`, `GogModule`, `XboxModule`, `AmazonGamesModule`, `UbisoftConnectModule`, `EaAppModule`, `LibraryModule`, and `NotificationModule`.
@@ -52,7 +52,6 @@ flowchart TB
     EpicSync["EpicGamesSyncService\nupsert games, IDs, offers"]
     EpicOwnershipSync["EpicOwnershipSyncService\nmetadata-only owned games sync"]
     EpicScheduler["EpicFreeOffersSchedulerService\nconfigurable Thursday 18:00 Bratislava"]
-    EpicProcessor["EpicFreeOffersProcessor\nBullMQ worker"]
   end
 
   subgraph Stores["External Store Integrations"]
@@ -62,7 +61,7 @@ flowchart TB
 
   subgraph Data["Data Layer"]
     Postgres["PostgreSQL\nUser -> UserSession\nUser -> ConnectedAccount -> Ownership -> Game\nStore -> FreeOffer\nStore -> SyncJob\nPlayPlatform future catalog"]
-    Redis["Redis\nBullMQ repeatable jobs\nfuture cache/events"]
+    Redis["Redis\nfuture cache/events"]
   end
 
   Web --> Api
@@ -101,9 +100,7 @@ flowchart TB
   EpicSync --> EpicCheckout
   EpicOwnershipSync --> PrismaService
   SchedulerModule --> EpicScheduler
-  SchedulerModule --> EpicProcessor
-  EpicScheduler --> Redis
-  EpicProcessor --> EpicSync
+  EpicScheduler --> EpicSync
   EpicClient --> EpicStore
   EpicSync --> PrismaService
   PrismaService --> Postgres
@@ -145,7 +142,9 @@ Store synchronization should follow a consistent pipeline:
 
 Epic Games is the first implementation target. Its weekly free-offer sync currently ensures the Epic Games Store exists, records a `SyncJob`, fetches current/upcoming promotions, normalizes games, upserts external IDs and free-offer windows, and stores source, timing, duration, and creation/update counters in job metadata.
 
-The scheduled Epic free-offer path uses BullMQ backed by Redis. `SchedulerModule` registers a repeatable `epic.free-offers.sync` job on the `epic-sync` queue for every Thursday at 18:00 Europe/Bratislava time by default. The schedule can be changed with `EPIC_FREE_OFFERS_SYNC_CRON` and `EPIC_FREE_OFFERS_SYNC_TIMEZONE`, and registration can be controlled with `EPIC_FREE_OFFERS_SYNC_ENABLED`. In `NODE_ENV=test`, scheduler infrastructure is not imported unless explicitly enabled. The processor delegates to the same `EpicGamesSyncService` used by the manual internal endpoint, so manual and automated runs share persistence, idempotency, `SyncJob` creation, failure recording, and result counters.
+The scheduled Epic free-offer path uses `@nestjs/schedule`. `SchedulerModule` registers a cron job for every Thursday at 18:00 Europe/Bratislava time by default. The schedule can be changed with `EPIC_FREE_OFFERS_SYNC_CRON` and `EPIC_FREE_OFFERS_SYNC_TIMEZONE`, and registration can be controlled with `EPIC_FREE_OFFERS_SYNC_ENABLED`. In `NODE_ENV=test`, scheduler infrastructure is not imported unless explicitly enabled. The scheduler delegates to the same `EpicGamesSyncService` used by the manual internal endpoint, so manual and automated runs share persistence, idempotency, `SyncJob` creation, failure recording, and result counters.
+
+The Next.js web app currently exposes a minimal public dashboard that reads `GET /api/free-offers` through `NEXT_PUBLIC_API_BASE_URL`. It shows current offer title, store, start date, end date, and derived active/upcoming/expired status without exposing internal sync job data.
 
 Account connection starts with one-time hashed state records and stores only account metadata. Claiming starts with user-assisted checkout links rather than password-based automation. This keeps Epic credentials out of ClaimWeekGames while preserving a path to add device-code based account flows later.
 

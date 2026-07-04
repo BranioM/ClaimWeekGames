@@ -14,8 +14,9 @@ The backend foundation is implemented and verified:
 - Health endpoint with database probe.
 - Public active free-offer endpoint.
 - Internal Epic weekly free-offer sync with `SyncJob` tracking.
-- Redis-backed scheduled Epic weekly free-offer sync.
+- Scheduled Epic weekly free-offer sync.
 - Internal sync-job visibility endpoint with status/job/store filters.
+- Minimal web dashboard for current Epic free offers.
 - Internal Epic ownership sync endpoint.
 - Epic account connection foundation using one-time hashed state values.
 - Opaque bearer session foundation using hashed `UserSession` records.
@@ -100,6 +101,14 @@ Expected response shape:
 }
 ```
 
+Run the web app:
+
+```sh
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001 npm run dev --workspace web
+```
+
+Open `http://localhost:3000` to view the free-offers dashboard.
+
 ## Verification
 
 Before considering a backend change complete, run:
@@ -121,12 +130,10 @@ npx prisma migrate status
 
 ## Scheduler Configuration
 
-Epic weekly free-offer tracking is scheduled through BullMQ and Redis.
+Epic weekly free-offer tracking is scheduled through `@nestjs/schedule`.
 
 Default schedule:
 
-- Queue: `epic-sync`
-- Job: `epic.free-offers.sync`
 - Cron: `0 18 * * 4`
 - Time zone: `Europe/Bratislava`
 - Human schedule: every Thursday at 18:00 Europe/Bratislava time
@@ -137,7 +144,7 @@ Environment variables:
 EPIC_FREE_OFFERS_SYNC_ENABLED=true
 EPIC_FREE_OFFERS_SYNC_CRON="0 18 * * 4"
 EPIC_FREE_OFFERS_SYNC_TIMEZONE="Europe/Bratislava"
-REDIS_URL="redis://localhost:6379"
+NEXT_PUBLIC_API_BASE_URL="http://localhost:3001"
 ```
 
 If `EPIC_FREE_OFFERS_SYNC_ENABLED` is not set, scheduler registration is enabled outside `test` and `production`. Tests do not register scheduled jobs unless explicitly enabled. Set `EPIC_FREE_OFFERS_SYNC_ENABLED=false` to disable local registration while keeping the manual internal sync endpoint available.

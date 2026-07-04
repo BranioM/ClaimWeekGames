@@ -99,7 +99,7 @@ Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
 
 Runs Epic weekly free-offer synchronization. The endpoint fetches current/upcoming Epic promotions, persists canonical games, external IDs, and free-offer windows, and records the run in `SyncJob`.
 
-The manual endpoint remains available even though the same synchronization is also scheduled automatically through Redis-backed BullMQ.
+The manual endpoint remains available even though the same synchronization is also scheduled automatically through `@nestjs/schedule`.
 
 Example response:
 
@@ -290,17 +290,14 @@ Sync behavior:
 
 ### `EpicFreeOffersSchedulerService`
 
-Registers a Redis-backed BullMQ repeatable job for Epic weekly free-offer synchronization.
+Registers a Nest Schedule cron job for Epic weekly free-offer synchronization.
 
 Schedule:
 
-- Queue: `epic-sync`
-- Job name: `epic.free-offers.sync`
+- Job name: `epic-weekly-free-offers-thursday-1800-bratislava`
 - Default cron: `0 18 * * 4`
 - Default time zone: `Europe/Bratislava`
 - Human schedule: every Thursday at 18:00 Europe/Bratislava time
-- Retry policy: 3 attempts with exponential backoff starting at 60 seconds
-- Retention: keep the latest 100 completed jobs and 500 failed jobs in Redis
 
 Configuration:
 
@@ -312,15 +309,9 @@ If `EPIC_FREE_OFFERS_SYNC_ENABLED` is not set, registration is enabled outside `
 
 The scheduled job delegates to `EpicGamesSyncService`, so every scheduled run creates and completes or fails a `SyncJob` record in PostgreSQL.
 
-### `EpicFreeOffersProcessor`
-
-Consumes the BullMQ scheduled job and runs Epic free-offer synchronization.
-
 Failure behavior:
 
-- logs the failed BullMQ job ID.
 - logs sanitized error messages only.
-- rethrows sync failures so BullMQ applies the retry policy.
 - relies on `EpicGamesSyncService` to mark the related PostgreSQL `SyncJob` as `FAILED`.
 
 ### `SyncJobsService`

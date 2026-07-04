@@ -20,10 +20,11 @@
 - Prisma migrations are applied locally.
 - Epic weekly free-game offers can be fetched, normalized, persisted, and tracked with `SyncJob`.
 - Epic sync records source, timing, duration, and creation/update counters in `SyncJob.metadata`.
-- Epic weekly free-offer sync is scheduled through Redis-backed BullMQ every Thursday at 18:00 Europe/Bratislava time by default.
+- Epic weekly free-offer sync is scheduled through `@nestjs/schedule` every Thursday at 18:00 Europe/Bratislava time by default.
 - Scheduled Epic sync can be configured with `EPIC_FREE_OFFERS_SYNC_ENABLED`, `EPIC_FREE_OFFERS_SYNC_CRON`, and `EPIC_FREE_OFFERS_SYNC_TIMEZONE`.
-- Scheduled Epic sync retries up to 3 times with exponential backoff and logs sanitized failures before BullMQ retry handling.
+- Scheduled Epic sync logs sanitized failures and relies on `EpicGamesSyncService` to record failed `SyncJob` rows.
 - Internal recent sync-job reads are available at `GET /api/internal/sync-jobs` with status, job type, store, and limit filters.
+- Web dashboard shows current public free offers from `GET /api/free-offers`.
 - Epic account connection state can be generated and consumed without storing raw state, passwords, or tokens.
 - Epic owned-game metadata can be persisted for an active connected account.
 - User-assisted Epic checkout URLs can be generated from free offers.
@@ -51,6 +52,8 @@ Last verified commands:
 - `npx prisma migrate status`
 - `npm run build`
 - `npm run build --workspace api`
+- `npm run build --workspace web`
+- `npm run lint --workspace web`
 - `npm run start:dev --workspace api`
 - `curl http://localhost:3001/api/health`
 - `curl http://localhost:3001/api/free-offers`
@@ -63,11 +66,11 @@ Last verified commands:
 
 ## Open Work
 
-- Production scheduler operations: queue dashboard, alerting, and dead-letter handling.
-- Cluster-safe scheduler deployment policy so only intended API/worker processes register repeatable jobs.
+- Production scheduler operations: alerting and missed-run monitoring.
+- Cluster-safe scheduler deployment policy so only intended API/worker processes register scheduled jobs.
 - Public signup/login or external identity-provider callback.
 - Session revocation endpoint.
 - Public user-authenticated account connection endpoints using `AuthenticatedUserGuard`.
 - Authenticated Epic library retrieval.
-- Web UI.
+- Dashboard polish and user-authenticated library views.
 - Notification event pipeline.

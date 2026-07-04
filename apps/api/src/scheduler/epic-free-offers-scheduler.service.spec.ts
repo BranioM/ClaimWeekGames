@@ -1,67 +1,77 @@
 import { jest } from '@jest/globals';
+import { CronJob } from 'cron';
 import { EpicFreeOffersSchedulerService } from './epic-free-offers-scheduler.service.js';
 import {
   EPIC_FREE_OFFERS_SYNC_CRON,
-  EPIC_FREE_OFFERS_SYNC_JOB,
-  EPIC_FREE_OFFERS_SYNC_SCHEDULER_ID,
+  EPIC_FREE_OFFERS_SYNC_JOB_NAME,
   EPIC_FREE_OFFERS_SYNC_TIME_ZONE,
 } from './scheduler.constants.js';
 
 describe('EpicFreeOffersSchedulerService', () => {
   it('registers the weekly Epic free-offer sync job', async () => {
-    const queue = {
-      add: jest.fn().mockResolvedValue({ id: 'repeat-job-1' }),
+    const addedJobs: CronJob[] = [];
+    const schedulerRegistry = {
+      doesExist: jest.fn().mockReturnValue(false),
+      deleteCronJob: jest.fn(),
+      addCronJob: jest.fn((_name: string, job: CronJob) => {
+        addedJobs.push(job);
+      }),
     };
     const config = {
       get: jest.fn().mockReturnValue(undefined),
     };
+    const epicGamesSync = {
+      syncFreeGames: jest.fn(),
+    };
     const service = new EpicFreeOffersSchedulerService(
-      queue as never,
+      schedulerRegistry as never,
       config as never,
+      epicGamesSync as never,
     );
 
-    await service.registerWeeklySync();
+    service.registerWeeklySync();
 
-    expect(queue.add).toHaveBeenCalledWith(
-      EPIC_FREE_OFFERS_SYNC_JOB,
-      {},
-      {
-        jobId: EPIC_FREE_OFFERS_SYNC_SCHEDULER_ID,
-        repeat: {
-          pattern: EPIC_FREE_OFFERS_SYNC_CRON,
-          tz: EPIC_FREE_OFFERS_SYNC_TIME_ZONE,
-        },
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 60_000,
-        },
-        removeOnComplete: 100,
-        removeOnFail: 500,
-      },
+    expect(schedulerRegistry.addCronJob).toHaveBeenCalledWith(
+      EPIC_FREE_OFFERS_SYNC_JOB_NAME,
+      expect.any(CronJob),
     );
+
+    const job = addedJobs[0];
+    if (!job) {
+      throw new Error('Cron job was not registered');
+    }
+    expect(job.name).toBe(EPIC_FREE_OFFERS_SYNC_JOB_NAME);
+    expect(job.cronTime.source).toBe(EPIC_FREE_OFFERS_SYNC_CRON);
+    expect(job.cronTime.timeZone).toBe(EPIC_FREE_OFFERS_SYNC_TIME_ZONE);
+    await job.stop();
   });
 
-  it('does not register scheduled jobs in tests unless explicitly enabled', async () => {
-    const queue = {
-      add: jest.fn(),
+  it('does not register scheduled jobs in tests unless explicitly enabled', () => {
+    const schedulerRegistry = {
+      addCronJob: jest.fn(),
     };
     const config = {
       get: jest.fn((key: string) => (key === 'NODE_ENV' ? 'test' : undefined)),
     };
     const service = new EpicFreeOffersSchedulerService(
-      queue as never,
+      schedulerRegistry as never,
       config as never,
+      { syncFreeGames: jest.fn() } as never,
     );
 
-    await service.onModuleInit();
+    service.onModuleInit();
 
-    expect(queue.add).not.toHaveBeenCalled();
+    expect(schedulerRegistry.addCronJob).not.toHaveBeenCalled();
   });
 
   it('uses scheduler environment overrides', async () => {
-    const queue = {
-      add: jest.fn().mockResolvedValue({ id: 'repeat-job-1' }),
+    const addedJobs: CronJob[] = [];
+    const schedulerRegistry = {
+      doesExist: jest.fn().mockReturnValue(false),
+      deleteCronJob: jest.fn(),
+      addCronJob: jest.fn((_name: string, job: CronJob) => {
+        addedJobs.push(job);
+      }),
     };
     const config = {
       get: jest.fn((key: string) => {
@@ -76,21 +86,34 @@ describe('EpicFreeOffersSchedulerService', () => {
       }),
     };
     const service = new EpicFreeOffersSchedulerService(
-      queue as never,
+      schedulerRegistry as never,
       config as never,
+      { syncFreeGames: jest.fn() } as never,
     );
 
-    await service.registerWeeklySync();
+    service.registerWeeklySync();
 
-    expect(queue.add).toHaveBeenCalledWith(
-      EPIC_FREE_OFFERS_SYNC_JOB,
-      {},
-      expect.objectContaining({
-        repeat: {
-          pattern: '5 19 * * 4',
-          tz: 'UTC',
-        },
-      }),
+    const job = addedJobs[0];
+    if (!job) {
+      throw new Error('Cron job was not registered');
+    }
+    expect(job.cronTime.source).toBe('5 19 * * 4');
+    expect(job.cronTime.timeZone).toBe('UTC');
+    await job.stop();
+  });
+
+  it('runs scheduled sync with scheduled source', async () => {
+    const epicGamesSync = {
+      syncFreeGames: jest.fn().mockResolvedValue({ syncJobId: 'sync-job-1' }),
+    };
+    const service = new EpicFreeOffersSchedulerService(
+      {} as never,
+      { get: jest.fn() } as never,
+      epicGamesSync as never,
     );
+
+    await service.runScheduledSync();
+
+    expect(epicGamesSync.syncFreeGames).toHaveBeenCalledWith('scheduled');
   });
 });

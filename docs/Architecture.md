@@ -35,6 +35,7 @@ flowchart TB
     HealthController["HealthController\nGET /api/health"]
     FreeOffersController["FreeOffersController\nGET /api/free-offers"]
     EpicSyncController["EpicSyncController\ninternal sync endpoints"]
+    EpicAccountsController["EpicAccountsController\ninternal account endpoints"]
     HealthService["HealthService"]
     InternalApiKeyGuard["InternalApiKeyGuard\nx-api-key"]
     PrismaService["PrismaService\nPrisma 7 + PostgreSQL adapter"]
@@ -70,6 +71,8 @@ flowchart TB
   HealthService --> PrismaService
   SecurityModule --> InternalApiKeyGuard
   EpicAccountsModule --> EpicAccountConnection
+  EpicAccountsModule --> EpicAccountsController
+  EpicAccountsController --> InternalApiKeyGuard
   EpicAccountConnection --> PrismaService
   EpicGamesModule --> EpicClient
   EpicGamesModule --> EpicCheckout
@@ -120,7 +123,7 @@ Account connection starts with one-time hashed state records and stores only acc
 
 Epic ownership synchronization currently accepts normalized ownership metadata and persists it for an active Epic `ConnectedAccount`. It does not fetch private Epic library data or store credentials; authenticated library retrieval remains blocked on a reviewed auth/session design.
 
-Public read endpoints are separated from internal sync endpoints. Internal sync endpoints require the `x-api-key` header to match `INTERNAL_API_KEY`; if the key is missing from configuration, the endpoints deny access.
+Public read endpoints are separated from internal mutation endpoints. Internal sync and account-connection endpoints require the `x-api-key` header to match `INTERNAL_API_KEY`; if the key is missing from configuration, the endpoints deny access.
 
 ## Future Integrations
 

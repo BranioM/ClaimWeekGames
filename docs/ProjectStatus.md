@@ -20,7 +20,7 @@
 - Epic owned-game metadata can be persisted for an active connected account.
 - User-assisted Epic checkout URLs can be generated from free offers.
 - Public active free-offer reads are available at `GET /api/free-offers`.
-- Internal Epic sync endpoints are guarded by `x-api-key` and `INTERNAL_API_KEY`.
+- Internal Epic sync and account-connection endpoints are guarded by `x-api-key` and `INTERNAL_API_KEY`.
 - GitHub Actions CI validates pull requests.
 
 ## Verification Baseline
@@ -44,7 +44,7 @@ Last verified commands:
 
 - Scheduler module.
 - Authentication and user session design.
-- Public API controllers for account connection.
+- Public user-authenticated account connection endpoints.
 - Authenticated Epic library retrieval.
 - Web UI.
 - Notification event pipeline.

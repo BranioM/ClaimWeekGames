@@ -41,3 +41,9 @@ Reason: this validates the data model and sync behavior without introducing priv
 Decision: expose active free offers publicly while protecting sync endpoints with an internal API key guard.
 
 Reason: free-offer reads are low-risk public data, but synchronization mutates database state and must not be callable without an explicit internal/admin boundary.
+
+## 2026-07-04: Keep Account Connection Endpoints Internal Until User Auth Exists
+
+Decision: expose Epic account connection state and connect operations only under the internal API-key boundary for now.
+
+Reason: account connection mutates user-linked records. It should not become public until authentication, authorization guards, validation, and rate limiting are designed and implemented.

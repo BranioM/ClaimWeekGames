@@ -20,6 +20,7 @@ Implemented safeguards:
 - Ownership sync does not delete missing ownerships automatically.
 - Internal sync endpoints require an `x-api-key` header matching `INTERNAL_API_KEY`.
 - Internal sync endpoints deny access if `INTERNAL_API_KEY` is not configured.
+- Internal account connection endpoints require the same API-key boundary until user authentication exists.
 
 ## Secrets Policy
 
@@ -70,6 +71,8 @@ Current internal endpoint boundary:
 
 - `POST /api/internal/epic/sync/free-offers`
 - `POST /api/internal/epic/sync/ownerships`
+- `POST /api/internal/epic/accounts/connection-state`
+- `POST /api/internal/epic/accounts/connect`
 
 These endpoints are guarded by `InternalApiKeyGuard` and are not a replacement for user authentication.
 

@@ -53,6 +53,48 @@ Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
 
 Runs Epic free-offer synchronization.
 
+### `POST /api/internal/epic/accounts/connection-state`
+
+Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
+
+Creates a one-time Epic account connection state for a user.
+
+Request body:
+
+```json
+{
+  "userId": "user-id"
+}
+```
+
+Example response:
+
+```json
+{
+  "state": "one-time-state-value",
+  "expiresAt": "2026-07-04T00:10:00.000Z"
+}
+```
+
+The raw `state` value is returned once and is not stored.
+
+### `POST /api/internal/epic/accounts/connect`
+
+Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
+
+Consumes a connection state and upserts an Epic connected account.
+
+Request body:
+
+```json
+{
+  "userId": "user-id",
+  "state": "one-time-state-value",
+  "externalAccountId": "epic-account-id",
+  "displayName": "Epic User"
+}
+```
+
 ### `POST /api/internal/epic/sync/ownerships`
 
 Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
@@ -157,5 +199,4 @@ Security constraints:
 
 ## Planned HTTP Surface
 
-- `POST /api/epic/accounts/connection-state`
-- `POST /api/epic/accounts/connect`
+- authenticated public account connection endpoints after user auth/session design is accepted

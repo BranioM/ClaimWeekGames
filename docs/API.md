@@ -47,6 +47,52 @@ Example response:
 ]
 ```
 
+### `GET /api/me`
+
+Authenticated endpoint. Requires `Authorization: Bearer <session-token>`.
+
+Returns the current authenticated application user.
+
+Example response:
+
+```json
+{
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com"
+  }
+}
+```
+
+### `POST /api/internal/auth/sessions`
+
+Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
+
+Creates an opaque bearer session token for an existing user. This endpoint is an internal bootstrap boundary until public signup/login is implemented.
+
+Request body:
+
+```json
+{
+  "userId": "user-id"
+}
+```
+
+Example response:
+
+```json
+{
+  "token": "one-time-session-token",
+  "expiresAt": "2026-08-03T00:00:00.000Z",
+  "user": {
+    "id": "user-id",
+    "email": "user@example.com"
+  }
+}
+```
+
+The raw token is returned once and is not stored.
+
 ### `POST /api/internal/epic/sync/free-offers`
 
 Internal endpoint. Requires `x-api-key` matching `INTERNAL_API_KEY`.
@@ -187,6 +233,22 @@ Security constraints:
 - state expires after 10 minutes.
 - state can be consumed only once.
 
+### `AuthService`
+
+Creates and validates application sessions.
+
+Security constraints:
+
+- stores SHA-256 token hashes only.
+- raw bearer tokens are returned once and never persisted.
+- sessions expire after 30 days.
+- revoked or expired sessions are rejected.
+- successful authentication updates `lastUsedAt`.
+
+### `AuthenticatedUserGuard`
+
+Protects user endpoints with `Authorization: Bearer <session-token>`.
+
 ### `InternalApiKeyGuard`
 
 Protects internal endpoints with an `x-api-key` header.
@@ -199,4 +261,5 @@ Security constraints:
 
 ## Planned HTTP Surface
 
-- authenticated public account connection endpoints after user auth/session design is accepted
+- public signup/login flow or external identity-provider callback.
+- authenticated public account connection endpoints using `AuthenticatedUserGuard`.

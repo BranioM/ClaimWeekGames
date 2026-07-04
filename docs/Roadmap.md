@@ -17,6 +17,7 @@ Completed:
 - Public active free-offer endpoint.
 - Internal API-key guard for sync endpoints.
 - Internal API-key guarded Epic account connection endpoints.
+- Opaque bearer session foundation with hashed `UserSession` records.
 
 ## Next Milestone: Auth and Public API Boundary
 
@@ -24,8 +25,9 @@ Add authenticated API endpoints around the existing internal services.
 
 Scope:
 
-- Add authentication/session design.
-- Add authorization guards.
+- Add public signup/login or external identity-provider callback.
+- Add session revocation endpoint.
+- Add user-scoped authorization guards where endpoints access owned records.
 - Design user-authenticated account-connection endpoints.
 - Keep sync endpoints internal/admin-only as the system grows beyond API-key protection.
 

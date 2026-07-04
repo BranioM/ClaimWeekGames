@@ -8,6 +8,7 @@ The backend is organized by feature modules. Controllers stay thin, services con
 
 - `DatabaseModule` owns database access and exports Prisma infrastructure.
 - `HealthModule` exposes application and database health checks.
+- `AuthModule` owns opaque application sessions and authenticated-user request context.
 - `EpicAccountsModule` owns secure Epic account connection state and connected-account registration.
 - `EpicGamesModule` is the first store integration and the highest-priority synchronization path.
 - Future store modules should follow the same shape as Epic Games: one module per store, store-specific services, and shared library ownership handled outside the store module.
@@ -26,6 +27,7 @@ flowchart TB
     AppModule["AppModule"]
     HealthModule["HealthModule"]
     FreeOffersModule["FreeOffersModule"]
+    AuthModule["AuthModule"]
     SecurityModule["SecurityModule"]
     DatabaseModule["DatabaseModule"]
     PrismaModule["PrismaModule"]
@@ -34,9 +36,12 @@ flowchart TB
 
     HealthController["HealthController\nGET /api/health"]
     FreeOffersController["FreeOffersController\nGET /api/free-offers"]
+    AuthController["AuthController\nGET /api/me\ninternal sessions"]
     EpicSyncController["EpicSyncController\ninternal sync endpoints"]
     EpicAccountsController["EpicAccountsController\ninternal account endpoints"]
     HealthService["HealthService"]
+    AuthService["AuthService\nopaque sessions"]
+    AuthenticatedUserGuard["AuthenticatedUserGuard\nBearer token"]
     InternalApiKeyGuard["InternalApiKeyGuard\nx-api-key"]
     PrismaService["PrismaService\nPrisma 7 + PostgreSQL adapter"]
     EpicAccountConnection["EpicAccountConnectionService\nhashed one-time state"]
@@ -52,13 +57,14 @@ flowchart TB
   end
 
   subgraph Data["Data Layer"]
-    Postgres["PostgreSQL\nUser -> ConnectedAccount -> Ownership -> Game\nStore/Platform -> FreeOffer"]
+    Postgres["PostgreSQL\nUser -> UserSession\nUser -> ConnectedAccount -> Ownership -> Game\nStore/Platform -> FreeOffer"]
     Redis["Redis\nfuture scheduling/cache/events"]
   end
 
   Web --> Api
   AppModule --> HealthModule
   AppModule --> FreeOffersModule
+  AppModule --> AuthModule
   AppModule --> SecurityModule
   AppModule --> DatabaseModule
   AppModule --> EpicAccountsModule
@@ -69,6 +75,12 @@ flowchart TB
   FreeOffersModule --> FreeOffersController
   HealthController --> HealthService
   HealthService --> PrismaService
+  AuthModule --> AuthController
+  AuthModule --> AuthService
+  AuthModule --> AuthenticatedUserGuard
+  AuthController --> AuthenticatedUserGuard
+  AuthController --> InternalApiKeyGuard
+  AuthService --> PrismaService
   SecurityModule --> InternalApiKeyGuard
   EpicAccountsModule --> EpicAccountConnection
   EpicAccountsModule --> EpicAccountsController
@@ -97,6 +109,7 @@ The current Prisma schema separates game metadata from ownership and store platf
 - `Game` stores canonical game metadata such as title, slug, developer, and publisher.
 - `Platform` stores digital stores such as Epic Games Store or Steam. It currently represents the Store concept.
 - `User` stores application users.
+- `UserSession` stores hashed opaque bearer sessions for authenticated application access.
 - `ConnectedAccount` links a user to a platform account without storing credentials. This is the boundary for multi-account support.
 - `AccountConnectionState` stores a hashed, one-time, expiring state token used during account onboarding. Raw state values are returned to the caller but never persisted.
 - `Ownership` links a connected account to a game. Ownership is intentionally separate from `Game` because the same game can exist on multiple stores and multiple accounts.
@@ -124,6 +137,8 @@ Account connection starts with one-time hashed state records and stores only acc
 Epic ownership synchronization currently accepts normalized ownership metadata and persists it for an active Epic `ConnectedAccount`. It does not fetch private Epic library data or store credentials; authenticated library retrieval remains blocked on a reviewed auth/session design.
 
 Public read endpoints are separated from internal mutation endpoints. Internal sync and account-connection endpoints require the `x-api-key` header to match `INTERNAL_API_KEY`; if the key is missing from configuration, the endpoints deny access.
+
+Authenticated user endpoints use opaque bearer sessions. Raw session tokens are returned once, stored only as SHA-256 hashes, and rejected after expiration or revocation. Public account-connection endpoints should use this guard once the user-facing flow is implemented.
 
 ## Future Integrations
 

@@ -11,6 +11,8 @@ Implemented safeguards:
 - Epic connection state stores only SHA-256 hashes.
 - Connection state expires after 10 minutes.
 - Connection state is one-time-use.
+- Application session tokens are hashed at rest.
+- Application session tokens expire and can be revoked.
 - Epic free-game fetch uses HTTPS only.
 - Epic free-game fetch allows only known Epic promotion hosts.
 - Epic free-game fetch has an explicit timeout.
@@ -69,6 +71,7 @@ Before adding public account or sync endpoints:
 
 Current internal endpoint boundary:
 
+- `POST /api/internal/auth/sessions`
 - `POST /api/internal/epic/sync/free-offers`
 - `POST /api/internal/epic/sync/ownerships`
 - `POST /api/internal/epic/accounts/connection-state`
@@ -76,10 +79,17 @@ Current internal endpoint boundary:
 
 These endpoints are guarded by `InternalApiKeyGuard` and are not a replacement for user authentication.
 
+Current authenticated user boundary:
+
+- `GET /api/me`
+
+This endpoint is guarded by `AuthenticatedUserGuard` and requires an opaque bearer session token.
+
 ## Open Security Work
 
-- Authentication/session design.
-- Authorization guards.
+- Public signup/login or external identity-provider callback.
+- Session revocation endpoint.
+- User-scoped authorization guards.
 - Authenticated Epic library retrieval design.
 - Request validation layer.
 - Rate limiting.

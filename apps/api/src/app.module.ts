@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { EpicAccountsModule } from './epic-accounts/epic-accounts.module.js';
 import { EpicGamesModule } from './epic-games/epic-games.module.js';
@@ -14,6 +15,7 @@ import { SecurityModule } from './security/security.module.js';
     }),
     DatabaseModule,
     SecurityModule,
+    AuthModule,
     HealthModule,
     FreeOffersModule,
     EpicAccountsModule,

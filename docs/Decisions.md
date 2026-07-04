@@ -47,3 +47,9 @@ Reason: free-offer reads are low-risk public data, but synchronization mutates d
 Decision: expose Epic account connection state and connect operations only under the internal API-key boundary for now.
 
 Reason: account connection mutates user-linked records. It should not become public until authentication, authorization guards, validation, and rate limiting are designed and implemented.
+
+## 2026-07-04: Use Opaque Hashed Sessions for API Authentication
+
+Decision: represent application sessions as opaque bearer tokens and store only SHA-256 token hashes in `UserSession`.
+
+Reason: opaque server-side sessions are simple to revoke, avoid JWT claim-validity pitfalls, and fit the current PostgreSQL-backed architecture. Public login/signup remains future work; session bootstrap is internal-only until that flow exists.

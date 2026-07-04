@@ -6,9 +6,9 @@
 
 ## Latest Completed Commits
 
-- `ba841e7 feat: add Epic account connection foundation`
-- `b16b23a feat: add Epic sync foundation`
-- `44a1ec4 fix: resolve Prisma startup issue`
+- `ca10860 feat: add internal Epic account endpoints`
+- `2982075 feat: add API boundary for offers and sync`
+- `9fc6791 feat: add Epic ownership sync foundation`
 
 ## Current Capabilities
 
@@ -20,7 +20,10 @@
 - Epic owned-game metadata can be persisted for an active connected account.
 - User-assisted Epic checkout URLs can be generated from free offers.
 - Public active free-offer reads are available at `GET /api/free-offers`.
+- Authenticated user identity reads are available at `GET /api/me`.
+- Opaque session tokens are stored only as hashes in `UserSession`.
 - Internal Epic sync and account-connection endpoints are guarded by `x-api-key` and `INTERNAL_API_KEY`.
+- Internal session bootstrap is guarded by `x-api-key` and `INTERNAL_API_KEY`.
 - GitHub Actions CI validates pull requests.
 
 ## Verification Baseline
@@ -43,8 +46,9 @@ Last verified commands:
 ## Open Work
 
 - Scheduler module.
-- Authentication and user session design.
-- Public user-authenticated account connection endpoints.
+- Public signup/login or external identity-provider callback.
+- Session revocation endpoint.
+- Public user-authenticated account connection endpoints using `AuthenticatedUserGuard`.
 - Authenticated Epic library retrieval.
 - Web UI.
 - Notification event pipeline.

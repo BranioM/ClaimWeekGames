@@ -14,6 +14,22 @@ model User {
 
   connectedAccounts ConnectedAccount[]
   accountConnectionStates AccountConnectionState[]
+  sessions UserSession[]
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime?
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, revokedAt, expiresAt])
 }
 
 model Platform {

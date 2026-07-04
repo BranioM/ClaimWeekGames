@@ -8,6 +8,7 @@ ORM: Prisma 7
 
 ```text
 User
+  -> UserSession
   -> ConnectedAccount
     -> Ownership
       -> Game
@@ -34,6 +35,30 @@ Important fields:
 - `id`
 - `email`
 - `createdAt`
+
+### `UserSession`
+
+Opaque application session for authenticated API access.
+
+Important fields:
+
+- `userId`
+- `tokenHash`
+- `expiresAt`
+- `revokedAt`
+- `lastUsedAt`
+- `createdAt`
+
+Constraints:
+
+- unique `tokenHash`
+- indexed `(userId, revokedAt, expiresAt)`
+
+Security behavior:
+
+- raw session tokens are returned once and never persisted.
+- only token hashes are stored.
+- expired or revoked sessions are rejected.
 
 ### `Platform`
 

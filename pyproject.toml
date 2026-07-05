@@ -1,0 +1,39 @@
+[project]
+name = "claimweekgames"
+version = "0.1.0"
+description = "Secure foundation for ClaimWeekGames backend services."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "black>=25.1.0",
+  "mypy>=1.16.0",
+  "pytest>=8.4.0",
+  "ruff>=0.12.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "S", "RUF"]
+ignore = [
+  "S101"
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+files = ["backend", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

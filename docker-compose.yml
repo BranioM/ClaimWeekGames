@@ -1,0 +1,9 @@
+services:
+  backend:
+    build: .
+    environment:
+      APP_ENV: development
+      STORAGE_DRIVER: json
+      VAULT_STATUS: planned
+    ports:
+      - "8000:8000"

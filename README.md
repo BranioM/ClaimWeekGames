@@ -1,159 +1,104 @@
-# Turborepo starter
+# ClaimWeekGames
 
-This Turborepo starter is maintained by the Turborepo core team.
+ClaimWeekGames is an Epic free-games claim assistant.
 
-## Using this example
+The app helps a user see current Epic free games and, in later sprints, track manual claiming across local account labels without storing Epic credentials.
 
-Run the following command:
+## Sprint 1 Scope
 
-```sh
-npx create-turbo@latest
-```
+Implemented:
 
-## What's inside?
+- Python 3.13 project configuration with `uv`
+- FastAPI backend foundation
+- public `GET /health`
+- future-facing `GET /status`
+- fail-closed internal API-key validation helper
+- recursive secret redaction helper
+- Dockerfile
+- Docker Compose for the backend only
+- GitHub Actions CI
+- project security and architecture docs
+- React + TypeScript + Vite frontend skeleton
 
-This Turborepo includes the following packages/apps:
+Explicitly not included:
 
-### Apps and Packages
+- NestJS
+- Prisma
+- PostgreSQL
+- Redis
+- multi-store library architecture
+- Epic implementation
+- Epic credential storage
+- automated Epic login or automated claiming
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Stack
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+Backend:
 
-### Utilities
+- Python 3.13
+- FastAPI
+- Uvicorn
+- `uv`
 
-This Turborepo has some additional tools already setup for you:
+Frontend:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+- React
+- TypeScript
+- Vite
 
-### Build
+Storage:
 
-To build all apps and packages, run the following command:
+- Sprint 1 has no database service.
+- Version 1.0 storage target is local JSON.
+- Sensitive persistence requires a future encrypted Vault design.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Local Development
 
-```sh
-cd my-turborepo
-turbo build
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo build
-npm dlx turbo build
-npm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
-```
-
-Without global `turbo`:
+Install Python dependencies:
 
 ```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
+uv sync
 ```
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Run the backend:
 
 ```sh
-cd my-turborepo
-turbo dev
+uv run uvicorn backend.app:app --reload
 ```
 
-Without global `turbo`, use your package manager:
+Check health:
 
 ```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
+curl http://localhost:8000/health
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Expected response:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+```json
+{"status":"ok"}
+```
+
+Run with Docker Compose:
 
 ```sh
-turbo dev --filter=web
+docker compose up --build
 ```
 
-Without global `turbo`:
+## Validation
+
+Run:
 
 ```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
+uv run black --check backend tests
+uv run ruff check backend tests
+uv run mypy backend tests
+uv run pytest
 ```
 
-### Remote Caching
+## Security
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+ClaimWeekGames must not store Epic passwords, cookies, access tokens, refresh tokens, or session tokens.
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+Internal API-key checks fail closed and compare hashed values with constant-time comparison. Redaction helpers remove common secret fields from nested payloads.
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-npm exec turbo login
-npm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-npm exec turbo link
-npm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+See `SECURITY.md` for the current policy.
